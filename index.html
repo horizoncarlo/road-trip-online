@@ -4,68 +4,80 @@
     <meta charset="utf-8" />
     <title>Road Trip!</title>
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1" />
-    
-    <!-- Favicon as an emoji lol -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>"/>
+    <link rel="stylesheet" type="text/css" href="./main.css"/>
     
-    <link rel="stylesheet" type="text/css" href="/home/carlo/hub/road-trip-online/main.css"/>
+    <!-- Bring in Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Go old fashion and use jQueryUI for the drag and drop -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
   </head>
 
   <body>
-    <div class="dice-wrapper" onclick="roll()" style="cursor: pointer;">
-      <div class="hover-wrap allow-hover">
-      <div class="dice">
-        <div class="dice-face dice-1">
-          <span class="dice-pip"></span>
+    <button onclick="rollAllDice()">Roll All</button>
+    
+    <template x-data="{ loop: Array(DICE_COUNT).fill(0) }" x-for="(loop, index) in loop">
+    <div x-data="{ wrapperClass: 'dice-wrapper' + index }" :class="wrapperClass" class="dice-wrapper"> <!-- @click="clickDice(index)" -->
+      <div x-data="{ hoverClass: 'hover-wrap' + index }" :class="hoverClass" class="allow-hover">
+        <div x-data="{ diceClass: 'dice' + index }" :class="diceClass" class="dice">
+          <div class="dice-face dice-1">
+            <span class="dice-pip"></span>
+          </div>
+          <div class="dice-face dice-2">
+            <span class="dice-pip"></span>
+            <span class="dice-pip"></span>
+          </div>
+          <div class="dice-face dice-3">
+            <span class="dice-pip"></span>
+            <span class="dice-pip"></span>
+            <span class="dice-pip"></span>
+          </div>
+          <div class="dice-face dice-4">
+            <div class="column">
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+            </div>
+            <div class="column">
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+            </div>
+          </div>
+          <div class="dice-face dice-5">
+            <div class="column">
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+            </div>
+            <div class="column">
+              <span class="dice-pip"></span>
+            </div>
+            <div class="column">
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+            </div>
+          </div>
+          <div class="dice-face dice-6">
+            <div class="column">
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+            </div>
+            <div class="column">
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+              <span class="dice-pip"></span>
+            </div>
+          </div>
         </div>
-        <div class="dice-face dice-2">
-          <span class="dice-pip"></span>
-          <span class="dice-pip"></span>
-        </div>
-        <div class="dice-face dice-3">
-          <span class="dice-pip"></span>
-          <span class="dice-pip"></span>
-          <span class="dice-pip"></span>
-        </div>
-        <div class="dice-face dice-4">
-          <div class="column">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-          <div class="column">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-        </div>
-        <div class="dice-face dice-5">
-          <div class="column">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-          <div class="column">
-            <span class="dice-pip"></span>
-          </div>
-          <div class="column">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-        </div>
-        <div class="dice-face dice-6">
-          <div class="column">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-          <div class="column">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-        </div>
-      </div>
       </div>
     </div>
+    </template>
     
-    <script src="/home/carlo/hub/road-trip-online/game.js"></script>
+    <div id="trafficDrop"
+         style="border: 1px solid red; width: 300px; height: 300px;">
+    </div>
+    
+    <script src="./game.js"></script>
   </body>
 </html>

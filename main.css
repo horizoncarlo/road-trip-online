@@ -4,10 +4,20 @@
   --dice-anim-ms: 100ms;
 }
 
+html,
+body {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100vh;
+}
+
 .dice-wrapper {
   width: var(--dice-size);
   height: var(--dice-size);
-  padding: 20px; /* Unnecessary, just easier formatting when testing */
+  padding: 5px;
+  cursor: pointer;
+  display: inline-block;
 }
 
 .dice {
@@ -16,7 +26,6 @@
   position: relative;
   transform-style: preserve-3d;
   transition: transform var(--dice-anim-ms);
-  font-size: 110px;
 }
 
 .dice-face {
@@ -62,7 +71,7 @@
   transform-style: preserve-3d;
   animation-name: wiggle-dice;
   animation-duration: 3s;
-  animation-delay: 0;
+  animation-delay: 1s;
   animation-iteration-count: infinite;
 }
 
