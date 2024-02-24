@@ -1,0 +1,122 @@
+:root {
+  --dice-size: 100px;
+  --dice-size-half: calc(var(--dice-size) / 2);
+  --dice-anim-ms: 100ms;
+}
+
+.dice-wrapper {
+  width: var(--dice-size);
+  height: var(--dice-size);
+  padding: 20px; /* Unnecessary, just easier formatting when testing */
+}
+
+.dice {
+  width: var(--dice-size);
+  height: var(--dice-size);
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform var(--dice-anim-ms);
+  font-size: 110px;
+}
+
+.dice-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  background: linear-gradient(0deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 40%, rgba(0,212,255,1) 100%);
+  border: 1px solid #333;
+}
+
+.dice-pip {
+  background-color: white;
+  background: radial-gradient(circle, white 0%, #333 500%);
+  border: 1px solid black;
+  display: block;
+  width: calc(var(--dice-size)/5);
+  height: calc(var(--dice-size)/5);
+  border-radius: 50%;
+  margin: 5px;
+}
+
+.dice.show-1 { transform: translateZ(calc(var(--dice-size-half) * -1)) rotateY(   0deg); }
+.dice.show-5 { transform: translateZ(calc(var(--dice-size-half) * -1)) rotateY( -90deg); }
+.dice.show-6 { transform: translateZ(calc(var(--dice-size-half) * -1)) rotateY(-180deg); }
+.dice.show-2 { transform: translateZ(calc(var(--dice-size-half) * -1)) rotateY(  90deg); }
+.dice.show-4 { transform: translateZ(calc(var(--dice-size-half) * -1)) rotateX( -90deg); }
+.dice.show-3 { transform: translateZ(calc(var(--dice-size-half) * -1)) rotateX(  90deg); }
+
+.dice-1 { transform: rotateY(  0deg) translateZ(var(--dice-size-half)); }
+.dice-5 { transform: rotateY( 90deg) translateZ(var(--dice-size-half)); }
+.dice-6 { transform: rotateY(180deg) translateZ(var(--dice-size-half)); }
+.dice-2 { transform: rotateY(-90deg) translateZ(var(--dice-size-half)); }
+.dice-4 { transform: rotateX( 90deg) translateZ(var(--dice-size-half)); }
+.dice-3 { transform: rotateX(-90deg) translateZ(var(--dice-size-half)); }
+
+.allow-hover {
+  transition: box-shadow 500ms;
+  box-shadow: 0 0 10px #333;
+}
+
+.allow-hover:hover {
+  box-shadow: none;
+  transform-style: preserve-3d;
+  animation-name: wiggle-dice;
+  animation-duration: 3s;
+  animation-delay: 0;
+  animation-iteration-count: infinite;
+}
+
+@keyframes wiggle-dice {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg)
+  }
+
+  25% {
+    transform: rotateX(-8deg) rotateY(-8deg) scale(1.05)
+  }
+  
+  75% {
+    transform: rotateX(8deg) rotateY(8deg) scale(0.95)
+  }
+
+  100% {
+    transform: rotateX(0deg) rotateY(0deg) 
+  }
+}
+
+.dice-1, .dice-2, .dice-3, .dice-4, .dice-5, .dice-6 {
+  display: flex;
+}
+
+.dice-1 {
+  justify-content: center;
+  align-items: center;
+}
+
+.dice-2, .dice-3, .dice-5, .dice-4, .dice-6 {
+  justify-content: space-between;
+}
+
+.dice-4 .column,
+.dice-5 .column,
+.dice-6 .column {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dice-2 .dice-pip:nth-of-type(2) {
+  align-self: flex-end;
+}
+
+.dice-3 .dice-pip:nth-of-type(2) {
+  align-self: center;
+}
+
+.dice-3 .dice-pip:nth-of-type(3) {
+  align-self: flex-end;
+}
+
+.dice-5 .column:nth-of-type(2) {
+  justify-content: center;
+}
