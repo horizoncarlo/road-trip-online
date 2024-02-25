@@ -17,24 +17,25 @@
 
   <body>
     <button onclick="rollAllDice()">Roll All</button>
+    <button onclick="applyScore()">Score</button>
     
     <template x-data="{ loop: Array(DICE_COUNT).fill(0) }" x-for="(loop, index) in loop">
     <div x-data="{ wrapperClass: 'dice-wrapper' + index }" :class="wrapperClass" class="dice-wrapper"> <!-- @click="clickDice(index)" -->
       <div x-data="{ hoverClass: 'hover-wrap' + index }" :class="hoverClass" class="allow-hover">
         <div x-data="{ diceClass: 'dice' + index }" :class="diceClass" class="dice">
-          <div class="dice-face dice-1">
+          <div class="dice-face dice-face-1">
             <span class="dice-pip"></span>
           </div>
-          <div class="dice-face dice-2">
-            <span class="dice-pip"></span>
-            <span class="dice-pip"></span>
-          </div>
-          <div class="dice-face dice-3">
-            <span class="dice-pip"></span>
+          <div class="dice-face dice-face-2">
             <span class="dice-pip"></span>
             <span class="dice-pip"></span>
           </div>
-          <div class="dice-face dice-4">
+          <div class="dice-face dice-face-3">
+            <span class="dice-pip"></span>
+            <span class="dice-pip"></span>
+            <span class="dice-pip"></span>
+          </div>
+          <div class="dice-face dice-face-4">
             <div class="column">
               <span class="dice-pip"></span>
               <span class="dice-pip"></span>
@@ -44,7 +45,7 @@
               <span class="dice-pip"></span>
             </div>
           </div>
-          <div class="dice-face dice-5">
+          <div class="dice-face dice-face-5">
             <div class="column">
               <span class="dice-pip"></span>
               <span class="dice-pip"></span>
@@ -57,7 +58,7 @@
               <span class="dice-pip"></span>
             </div>
           </div>
-          <div class="dice-face dice-6">
+          <div class="dice-face dice-face-6">
             <div class="column">
               <span class="dice-pip"></span>
               <span class="dice-pip"></span>
@@ -74,8 +75,42 @@
     </div>
     </template>
     
-    <div id="trafficDrop"
-         style="border: 1px solid red; width: 300px; height: 300px;">
+    <br/>
+    
+    <div id="traffic" class="dice-dropzone allow-show-2">
+      <label>Traffic ⚁</label>
+      <span class="dice-socket">⚁</span>
+    </div>
+    <div id="hunger" class="dice-dropzone allow-show-3">
+      <label>Hunger ⚂</label>
+      <span class="dice-socket">⚂</span>
+    </div>
+    <div id="music" class="dice-dropzone allow-show-5">
+      <label>Music ⚄</label>
+      <span class="dice-socket">⚄</span>
+    </div>
+    <br/>
+    <div id="restStop" class="dice-dropzone allow-show-4">
+      <label>Rest Stop ⚃</label>
+      <span class="dice-socket">⚃</span>
+    </div>
+    <br/>
+    <div id="lost" class="dice-dropzone allow-show-1">
+      <label>Lost ⚀</label>
+      <span class="dice-socket">⚀</span>
+    </div>
+    <div id="scenicDetour" class="dice-dropzone allow-show-6">
+      <label>Scenic Detour ⚅</label>
+      <span class="dice-socket">⚅</span>
+    </div>
+    <br/>
+    <div id="route" class="dice-dropzone allow-show-1">
+      <label>Route ⚀</label>
+      <span class="dice-socket">⚀</span>
+    </div>
+    <div id="travel" class="dice-dropzone allow-show-6">
+      <label>Travel ⚅</label>
+      <span class="dice-socket">⚅</span>
     </div>
     
     <script src="./game.js"></script>

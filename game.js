@@ -8,14 +8,28 @@ function init() {
   document.addEventListener('alpine:initialized', () => {
     for (let i = 0; i < DICE_COUNT; i++) {
       $('.dice-wrapper' + i).draggable({
-        containment: 'document',
+        containment: 'document'
       });
     }
     
-    $( "#trafficDrop" ).droppable({
-      drop: function( event, ui ) {
-        console.log("DROPPED", event, ui);
-        $( this ).html( "Dropped at " + new Date().toLocaleTimeString() );
+    $('.dice-dropzone').droppable({
+      activeClass: 'dice-dropzone-active',
+      hoverClass: 'dice-dropzone-hover',
+      accept: function (selectedDice) {
+        let showStyle = null;
+        selectedDice.find('.dice').get(0).classList.forEach(classItem => {
+          if (classItem && classItem.startsWith('show-')) {
+            showStyle = classItem;
+          }
+        });
+        
+        if (showStyle) {
+          return $(this).hasClass('allow-' + showStyle);
+        }
+        return false;
+      },
+      drop: function (event, ui) {
+        console.error("DROP THIS", $(this).get(0).classList); // TTODO
       }
     });
     
@@ -27,6 +41,32 @@ init();
 
 function D6() {
   return 1 + Math.floor(rand.random() * 6);
+}
+
+function getDiceObject(diceIndex) {
+  return $('.dice' + diceIndex);
+}
+
+function getDice(diceIndex) {
+  return getDiceObject(diceIndex).get(0);
+}
+
+function applyScore() {
+  // Loop through our dice and check where each one ended up - is inside a dropzone? Is it valid?
+  for (let i = 0; i < DICE_COUNT; i++) {
+    const currentDice = getDiceObject(i);
+    $('.dice-dropzone').each(function(index, dropzoneEle) {
+      // TTODO Determine if our currentDice is inside the current dropzoneEle based on position
+      const dicePos = currentDice.parent().parent().position();
+      const dropPos = $(dropzoneEle).position();
+      if ((dicePos.top >= dropPos.top && // Fits Y
+          dicePos.top <= dropPos.top + $(dropzoneEle).outerHeight()) &&
+          (dicePos.left >= dropPos.left && // Fits X
+          dicePos.left <= dropPos.left + $(dropzoneEle).outerWidth())) {
+        console.error("FITS", currentDice, dropzoneEle);
+      }
+    });
+  }
 }
 
 function rollAllDice() {
@@ -48,7 +88,7 @@ function clickDice(diceIndex) {
 }
 
 function twirlDice(diceIndex, reset) {
-  const dice = document.querySelector('.dice' + diceIndex);
+  const dice = getDice(diceIndex);
   
   if (reset) {
     dice.style.transform = 'rotateX(0deg) rotateY(0deg)';
@@ -69,7 +109,7 @@ function twirlDice(diceIndex, reset) {
 }
 
 function rollDice(diceIndex) {
-  const dice = document.querySelector('.dice' + diceIndex);
+  const dice = getDice(diceIndex);
   const hoverWrap = document.querySelector('.hover-wrap' + diceIndex);
   
   if (lastClasses[diceIndex]) {

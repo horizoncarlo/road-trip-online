@@ -1,1 +1,3 @@
 - z-index on dragging, and z-index ordering when dropping
+- For detecting where dice are dropped, when the user is done and wants to apply scoring, instead of tracking dropped zones, could just loop through each dice and check if it overlaps each dropzone
+- Snap draggable into dice placement slot
