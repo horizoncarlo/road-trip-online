@@ -1,3 +1,5 @@
-- z-index on dragging, and z-index ordering when dropping
+- BUG: Dragging fires onclick and selects the dice. Maybe use some combination of onmouseup instead
+- z-index on dragging, and z-index ordering when dropping, such as stacking dice on a single slot
 - For detecting where dice are dropped, when the user is done and wants to apply scoring, instead of tracking dropped zones, could just loop through each dice and check if it overlaps each dropzone
 - Snap draggable into dice placement slot
+- Reset dice position on Roll All. And add a "Reset" button that repositions the dice back to the original setup (but doesn't change their faces)

@@ -48,6 +48,15 @@ body {
   display: inline-block;
 }
 
+.dice-wrapper-selected {
+  filter: brightness(1.5);
+}
+.dice-wrapper-selected .dice-face {
+  /* box-shadow: 0 0 10px inset red; */
+  /* filter: invert(1); */
+  filter: blur(2px);
+}
+
 .dice {
   width: var(--dice-size);
   height: var(--dice-size);

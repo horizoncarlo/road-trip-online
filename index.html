@@ -17,10 +17,11 @@
 
   <body>
     <button onclick="rollAllDice()">Roll All</button>
+    <button onclick="rerollSelected()">Reroll Selected</button>
     <button onclick="applyScore()">Score</button>
     
     <template x-data="{ loop: Array(DICE_COUNT).fill(0) }" x-for="(loop, index) in loop">
-    <div x-data="{ wrapperClass: 'dice-wrapper' + index }" :class="wrapperClass" class="dice-wrapper"> <!-- @click="clickDice(index)" -->
+    <div x-bind:id="index" x-data="{ wrapperClass: 'dice-wrapper' + index }" :class="wrapperClass" class="dice-wrapper">
       <div x-data="{ hoverClass: 'hover-wrap' + index }" :class="hoverClass" class="allow-hover">
         <div x-data="{ diceClass: 'dice' + index }" :class="diceClass" class="dice">
           <div class="dice-face dice-face-1">
