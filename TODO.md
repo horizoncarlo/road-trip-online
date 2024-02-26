@@ -1,5 +1,9 @@
-- BUG: Dragging fires onclick and selects the dice. Maybe use some combination of onmouseup instead
-- z-index on dragging, and z-index ordering when dropping, such as stacking dice on a single slot
-- For detecting where dice are dropped, when the user is done and wants to apply scoring, instead of tracking dropped zones, could just loop through each dice and check if it overlaps each dropzone
 - Snap draggable into dice placement slot
-- Reset dice position on Roll All. And add a "Reset" button that repositions the dice back to the original setup (but doesn't change their faces)
+- Would be amazing to leverage the 3D even more and have visibly stacked dice in the same slot
+- Customize:
+  - dice color (face, pip, border)
+  - sort dice after roll or not
+  - number of twirls (aka fast mode to have none)
+  - start setup
+- Eventually do an "auto-allocate" that places our dice for us? Since realistically when playing on tabletop an experienced player will often just do the scoring without physically placing
+  - Or could just let Score button be pressed without fully drag and dropped dice? Basically work against allDice list instead of checking slots

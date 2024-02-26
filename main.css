@@ -14,9 +14,10 @@ body {
 
 .dice-dropzone {
   display: inline-block;
-  border: 1px solid transparent;
-  width: calc(var(--dice-size) + (calc(var(--dice-size)/2.5)));
-  height: calc(var(--dice-size) + (calc(var(--dice-size)/2.5)));
+  border: 3px inset #333;
+  border-radius: 10px;
+  width: calc(var(--dice-size) * 2.25);
+  height: calc(var(--dice-size) + (calc(var(--dice-size)/2)));
   text-align: center;
 }
 
@@ -33,7 +34,7 @@ body {
 }
 
 .dice-dropzone-hover {
-  border: 1px inset #333;
+  box-shadow: 0 0 20px inset #DDDD00;
 }
 
 .dice-socket {
