@@ -27,10 +27,24 @@
       Memories: <span x-text="resources.memories"></span>
     </div>
     
-    <button onclick="resetDicePositions(); rollAllDice()">Roll All</button>
-    <button onclick="rerollSelected()">Reroll Selected</button>
-    <!-- TODO +1/-1 one selected dice by spending 2 Memories -->
-    <button onclick="tryToScore()">Score</button>
+    <div x-data="{ turnState: turnState }">
+      <!-- TODO Can't ever roll all - game does first roll for you, then after scoring re-rolls all, so can remove: <button onclick="rollAllDice()" :disabled="turnState.step !== 1">Roll All</button> -->
+      <button onclick="rerollSelected()" :disabled="turnState.step === 1">
+        <template x-if="turnState.usingRestStop">
+          <span>Reroll Rest Stop</span>
+        </template>
+        <template x-if="!turnState.usingRestStop">
+          <span>
+            <span x-show="turnState.step > 2">Reroll for 2 Memories</span>
+            <span x-show="turnState.step <= 2">Reroll Selected</span>
+          </span>
+        </template>
+      </button>
+      <!-- Technically COULD disable the +1/-1 buttons if we don't have enough Memories, but that can be confusing when learning the rules -->
+      <button onclick="modifySelected(1)" :disabled="turnState.step === 1">+1 Selected</button>
+      <button onclick="modifySelected(-1)" :disabled="turnState.step === 1">-1 Selected</button>
+      <button onclick="tryToEndTurn()" :disabled="turnState.step < 3 || turnState.allocatedDice < DICE_COUNT">End Turn</button>
+    </div>
     
     <template x-data="{ loop: allDice }" x-for="(diceObj) in loop">
     <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"

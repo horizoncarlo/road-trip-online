@@ -2,6 +2,7 @@
   --dice-size: 100px;
   --dice-size-half: calc(var(--dice-size) / 2);
   --dice-anim-ms: 100ms;
+  --basic-gray: #333333;
 }
 
 html,
@@ -12,9 +13,21 @@ body {
   height: 100vh;
 }
 
+@font-face {
+  font-family: FixedsysExcelsior301Regular;
+  src: url(./fixedsys-excelsior.woff2) format("woff2");
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: none;
+  font-smooth: never;
+}
+
+html, body, button, input {
+  font-family: FixedsysExcelsior301Regular;
+}
+
 .dice-dropzone {
   display: inline-block;
-  border: 3px inset #333;
+  border: 3px inset #777777;
   border-radius: 10px;
   width: calc(var(--dice-size) * 2.25);
   height: calc(var(--dice-size) + (calc(var(--dice-size)/2)));
@@ -30,7 +43,7 @@ body {
   border-radius: 10px;
   background-color: rgba(0, 255, 0, 0.3);
   text-shadow: 0 0 10px #DDDD00;
-  color: #333;
+  color: var(--basic-gray);
 }
 
 .dice-dropzone-hover {
@@ -50,12 +63,8 @@ body {
 }
 
 .dice-wrapper-selected {
-  filter: brightness(1.5);
-}
-.dice-wrapper-selected .dice-face {
-  /* box-shadow: 0 0 10px inset red; */
-  /* filter: invert(1); */
-  filter: blur(2px);
+  filter: brightness(1.5) blur(2px);
+  transform: scale(1.05);
 }
 
 .dice {
@@ -71,12 +80,12 @@ body {
   width: var(--dice-size);
   height: var(--dice-size);
   background: linear-gradient(0deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 40%, rgba(0,212,255,1) 100%);
-  border: 1px solid #333;
+  border: 1px solid var(--basic-gray);
 }
 
 .dice-pip {
   background-color: white;
-  background: radial-gradient(circle, white 0%, #333 500%);
+  background: radial-gradient(circle, white 0%, var(--basic-gray) 500%);
   border: 1px solid black;
   display: block;
   width: calc(var(--dice-size)/5);
@@ -101,7 +110,7 @@ body {
 
 .allow-hover {
   transition: box-shadow 500ms;
-  box-shadow: 0 0 10px #333;
+  box-shadow: 0 0 10px var(--basic-gray);
 }
 
 .allow-hover:hover {

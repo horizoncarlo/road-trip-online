@@ -1,3 +1,7 @@
+- TODO Bug in Firefox rendering, dice is white if moused over while rolling - fine if wiggle-dice anim is removed
+- Introduction paragraph on load (don't show based on returning user, tracked in storage). Also includes a link to the rules PDF
+- Tutorial mode from intro dialog - puts floating tooltips on each element and explains the rules
+- Intro/tutorial accessible later via a floating ? button on the page
 - Snap draggable into dice placement slot
 - Would be amazing to leverage the 3D even more and have visibly stacked dice in the same slot
 - Customize:

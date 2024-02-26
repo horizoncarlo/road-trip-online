@@ -16,10 +16,11 @@ const labelObj = {
 const notify = new Notyf();
 
 class Dice {
-  constructor(diceIndex, value, isSelected, isRolling, wrapperEle, hoverEle, diceEle, originalX, originalY) {
+  constructor(diceIndex, value, isSelected, isAllocated, isRolling, wrapperEle, hoverEle, diceEle, originalX, originalY) {
     this.diceIndex = diceIndex;
     this.value = value;
     this.isSelected = isSelected || false;
+    this.isAllocated = isAllocated || false;
     this.isRolling = isRolling || false;
     // Dice are laid out as 3 divs: wrapper, then hover, then dice (then all the faces/pips inside that)
     this.wrapperEle = wrapperEle;
@@ -28,26 +29,43 @@ class Dice {
     this.originalX = originalX;
     this.originalY = originalY;
   }
+  
+  resetPosition() {
+    this.wrapperEle.css('left', this.originalX);
+    this.wrapperEle.css('top', this.originalY);
+    
+    // Remove any validation border, and mark us unallocated
+    markValidDice(this);
+    this.isAllocated = false;
+  }
 }
 
 // Fancier and more reliable random generator
 const MersenneTwister=function(t){null==t&&(t=(new Date).getTime()),this.N=624,this.M=397,this.MATRIX_A=2567483615,this.UPPER_MASK=2147483648,this.LOWER_MASK=2147483647,this.mt=new Array(this.N),this.mti=this.N+1,this.init_genrand(t)};MersenneTwister.prototype.init_genrand=function(t){for(this.mt[0]=t>>>0,this.mti=1;this.mti<this.N;this.mti++){t=this.mt[this.mti-1]^this.mt[this.mti-1]>>>30;this.mt[this.mti]=(1812433253*((4294901760&t)>>>16)<<16)+1812433253*(65535&t)+this.mti,this.mt[this.mti]>>>=0}},MersenneTwister.prototype.init_by_array=function(t,i){var s,h,m;for(this.init_genrand(19650218),s=1,h=0,m=this.N>i?this.N:i;m;m--){var n=this.mt[s-1]^this.mt[s-1]>>>30;this.mt[s]=(this.mt[s]^(1664525*((4294901760&n)>>>16)<<16)+1664525*(65535&n))+t[h]+h,this.mt[s]>>>=0,h++,++s>=this.N&&(this.mt[0]=this.mt[this.N-1],s=1),h>=i&&(h=0)}for(m=this.N-1;m;m--){n=this.mt[s-1]^this.mt[s-1]>>>30;this.mt[s]=(this.mt[s]^(1566083941*((4294901760&n)>>>16)<<16)+1566083941*(65535&n))-s,this.mt[s]>>>=0,++s>=this.N&&(this.mt[0]=this.mt[this.N-1],s=1)}this.mt[0]=2147483648},MersenneTwister.prototype.genrand_int32=function(){var t,i=new Array(0,this.MATRIX_A);if(this.mti>=this.N){var s;for(this.mti==this.N+1&&this.init_genrand(5489),s=0;s<this.N-this.M;s++)t=this.mt[s]&this.UPPER_MASK|this.mt[s+1]&this.LOWER_MASK,this.mt[s]=this.mt[s+this.M]^t>>>1^i[1&t];for(;s<this.N-1;s++)t=this.mt[s]&this.UPPER_MASK|this.mt[s+1]&this.LOWER_MASK,this.mt[s]=this.mt[s+(this.M-this.N)]^t>>>1^i[1&t];t=this.mt[this.N-1]&this.UPPER_MASK|this.mt[0]&this.LOWER_MASK,this.mt[this.N-1]=this.mt[this.M-1]^t>>>1^i[1&t],this.mti=0}return t=this.mt[this.mti++],t^=t>>>11,t^=t<<7&2636928640,t^=t<<15&4022730752,(t^=t>>>18)>>>0},MersenneTwister.prototype.random=function(){return this.genrand_int32()*(1/4294967296)};
 const rand = new MersenneTwister();
 
+/* Steps of a Turn:
+1: Roll all dice
+2: MUST reroll, and can +1/-1
+3: Have rerolled, can reroll again (Rest Stop, or spend Memories), can +1/-1
+4: Placed all dice, can reroll/+1/-1 still, and can Score
+After scoring go back to Step 1
+*/
+let turnState = { step: 1, usingRestStop: false, allocatedDice: 0 };
 let allDice = []; // Array of our Dice objects
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
 let lostUsageDialog;
 let lostEffectsFun = false; // If true any Lost dice will apply to Fun, otherwise on false to Fuel
 let scoreCounter = {};
-// TODO Allow customization of these starting values
-let resources = { // Track our Fuel/Fun/Distance/Memories
-  fuel: 3,
-  fun: 3,
-  memories: 3,
-  distance: 0
-};
+let resources; // Track our Fuel/Fun/Distance/Memories
+
+init();
 
 function init() {
+  // TODO Likely store state like score and current dice in session/local storage via Alpine.persist plugin, to not restart the game on refresh
+  resources = applyStartingResources(); // Initialize our default resources
+  
+  // Setup our dialog for asking the user how to apply Lost dice
   setupLostUsageDialog();
   
   // Populate our initial dice array
@@ -56,12 +74,21 @@ function init() {
   }
   
   document.addEventListener('alpine:initialized', () => {
-    // Once we have a reference to Alpine we want to make our array reactive, so any changes
-    //  to the dice are immediately shown on the UI
+    // Once we have a reference to Alpine we want to make some variables reactive, so
+    //  changes are immediately shown on the UI
     allDice = Alpine.reactive(allDice);
-    
-    // Also setup our Resources as reactive
+    turnState = Alpine.reactive(turnState);
     resources = Alpine.reactive(resources);
+    
+    // Effect listeners when the reactive state changes
+    Alpine.effect(() => {
+      // Maintain the usingRestStop flag
+      turnState.usingRestStop = allDice.filter(currentDice => currentDice.isSelected && currentDice.value === 4).length > 0;
+    });
+    Alpine.effect(() => {
+      // Maintain the allocatedDice count
+      turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
+    });
     
     allDice.forEach(currentDice => {
       // Now that our array is rendered we can assign our elements to the allDice
@@ -80,6 +107,7 @@ function init() {
           
           // Also remove any validation border
           markValidDice(currentDice);
+          currentDice.isAllocated = false;
           
           // Highlight all applicable droppable zones that have the correct number
           $('.dice-dropzone').each(function(index, dropzoneEle) {
@@ -107,6 +135,7 @@ function init() {
         const currentDice = allDice[ui.draggable.attr('data-index')];
         if (currentDice.value == $(this).attr('dice-allowed')) {
           markValidDice(currentDice);
+          currentDice.isAllocated = true;
         }
         else {
           markInvalidDice(currentDice);
@@ -114,25 +143,30 @@ function init() {
       }
     });
     
-    // Do an initial roll
-    rollAllDice();
+    // Start up the game
+    startTurn();
   });
 }
-init();
 
 function resetDicePositions() {
   allDice.forEach(currentDice => {
-    currentDice.wrapperEle.css('left', currentDice.originalX);
-    currentDice.wrapperEle.css('top', currentDice.originalY);
-    markValidDice(currentDice); // Also clear all borders
+    currentDice.resetPosition();
   });
 }
 
-function tryToScore() {
+function tryToEndTurn() {
+  if (turnState.step < 3) {
+    notify.error("Must reroll the dice once each turn");
+    return;
+  }
+  if (turnState.allocatedDice < DICE_COUNT) { // Unallocated dice
+    notify.error("Place all your dice into a slot (missing " + (DICE_COUNT - turnState.allocatedDice) + ")");
+    return;
+  }
+  
   // Loop through our dice and check where each one ended up - is inside a dropzone? Is it valid?
   scoreCounter = {}; // Format is ID of slot: count of dice in it
   let invalidDice = []; // Array of { value: num, allowed: num, label: string } that are in the wrong slot, to notify the user
-  let allocatedCount = 0; // Any unallocated dice (that aren't put in a slot)
   let oneFaceCount = 0, sixFaceCount = 0;
   allDice.forEach(currentDice => {
     $('.dice-dropzone').each(function(index, dropzoneEle) {
@@ -144,10 +178,7 @@ function tryToScore() {
           dicePos.top <= dropPos.top + dropzoneObj.outerHeight()) &&
           (dicePos.left >= dropPos.left && // Fits X
           dicePos.left <= dropPos.left + dropzoneObj.outerWidth())) {
-        // Track how many dice we've allocated properly into a slot
-        allocatedCount++;
-        
-        // Also track 1s and 6s for Distance validation
+        // Track 1s and 6s for Distance validation
         if (currentDice.value === 1) { oneFaceCount++; }
         if (currentDice.value === 6) { sixFaceCount++; }
         
@@ -180,10 +211,6 @@ function tryToScore() {
     notify.error(message);
     return;
   }
-  if (allocatedCount < DICE_COUNT) { // Unallocated dice
-    notify.error("Place all your dice into a slot (missing " + (DICE_COUNT - allocatedCount) + ")");
-    return;
-  }
   
   // Mandatory Distance from Route + Travel
   // Check how many 1s and 6s we have - if we can match them up, then check how many Route + Travel there are
@@ -204,13 +231,11 @@ function tryToScore() {
   }
   else {
     // Otherwise if we made it this far all our dice are setup and valid, so we can apply our score!
-    applyScore(scoreCounter);
+    endTurn(scoreCounter);
   }
 }
 
 function applyScore(scoreCounter) {
-  console.log("Slot details", scoreCounter);
-  
   // We just total all our modifications based on each slot, and apply them
   let fuelChange = 0;
   let funChange = 0;
@@ -254,35 +279,61 @@ function applyScore(scoreCounter) {
   resources.fuel += fuelChange;
   resources.fun += funChange;
   resources.distance += distanceChange;
-  resources.memories += memoryChange;
+  changeMemories(resources.memories);
   
-  // Check for maximum Fun/Fuel/Memories
+  // Check for maximum Fuel and Fun
+  // Note Memories are safely handled in the function above
   if (resources.fuel > 6) { resources.fuel = 6; }
   if (resources.fun > 6) { resources.fun = 6; }
-  if (resources.memories > 6) { resources.memories = 6; }
+}
+
+function startTurn() {
+  turnState.step = 1;
+  rollAllDice();
+}
+
+function endTurn(scoreCounter) {
+  // Apply and reset our score for the turn
+  applyScore(scoreCounter);
+  scoreCounter = {};
   
-  // Check if we won or lost
+  // Check if we won or lost and start a new turn
   Alpine.nextTick(() => {
     setTimeout(() => { // TODO Need to wait an extra setTimeout because we're temporarily using an alert() which blocks the page from processing changes
-      checkForVictoryOrDefeat();
+      let restartGame = false;
+      // TODO Better way to notify of loss/victory, with a prompt to play again, etc.
+      if (resources.fuel <= 0) {
+        alert("You lose! Ran out of Fuel :(");
+        restartGame = true;
+      }
+      if (resources.fun <= 0) {
+        alert("You lose! Ran out of Fun :(");
+        restartGame = true;
+      }
+      if (resources.distance >= 6) {
+        alert("You won and reached your destination!"); // TODO Could be fun to randomize destinations, and show a little car with a progress bar at the top of the page for Distance
+        restartGame = true;
+      }
+      
+      if (restartGame) {
+        applyStartingResources();
+      }
+      
+      startTurn();
     }, 100);
   }); // Let the page render updates (primarily our resources count) before checking
 }
 
-function checkForVictoryOrDefeat() {
-  // TODO Determine if we lost or won, and notify in a cleaner way, plus restarting the game
-  if (resources.fuel <= 0) {
-    alert("You lose! Ran out of Fuel :(");
-    location.reload();
-  }
-  if (resources.fun <= 0) {
-    alert("You lose! Ran out of Fun :(");
-    location.reload();
-  }
-  if (resources.distance >= 6) {
-    alert("You won and reached your destination!"); // TODO Could be fun to randomize destinations, and show a little car with a progress bar at the top of the page for Distance
-    location.reload();
-  }
+function applyStartingResources() {
+  // Bit of a hack, but we want to maintain the Alpine.js reactivity
+  // Which re-assigning resources to a new {} seems to stop
+  // So instead if we have existing resources, use those instead, aka restarting the game later
+  const toReturn = resources ? resources : {};
+  toReturn.fuel = 3;
+  toReturn.fun = 3;
+  toReturn.memories = 3;
+  toReturn.distance = 0;
+  return toReturn;
 }
 
 function safeNum(val) {
@@ -304,14 +355,14 @@ function setupLostUsageDialog() {
         $(this).dialog('close');
         Alpine.nextTick(() => { // Make sure the dialog is closed before processing
           lostEffectsFun = false;
-          applyScore(scoreCounter);
+          endTurn(scoreCounter);
         });
       },
       'Fun': function() {
         $(this).dialog('close');
         Alpine.nextTick(() => {
           lostEffectsFun = true;
-          applyScore(scoreCounter);
+          endTurn(scoreCounter);
         });
       },
       Cancel: function() {
@@ -326,7 +377,13 @@ function askForLostUsage() {
 }
 
 function rollAllDice() {
-  deselectAllDice(); // Deselect everything in case
+  turnState.step++;
+  
+  // Reset our dice before rolling them all
+  resetDicePositions();
+  deselectAllDice();
+  setAllDiceUnallocated();
+  
   allDice.forEach(currentDice => this.processDice(currentDice));
 }
 
@@ -334,19 +391,89 @@ function toggleDiceSelection(diceObj) {
   diceObj.isSelected = !diceObj.isSelected;
 }
 
+function getSelectedDice() {
+  return allDice.filter(dice => dice.isSelected);
+}
+
 function deselectAllDice() {
   allDice.forEach(currentDice => currentDice.isSelected = false);
 }
 
+function setAllDiceUnallocated() {
+  allDice.forEach(currentDice => currentDice.isAllocated = false);
+}
+
 function rerollSelected() {
-  // TODO Verify that we're rerolling only a single dice, or multiple BUT of the same face, or a Rest Stop. Otherwise prompt/confirm for Memory usage to do so (or just change button label beforehand)
+  const selectedDice = getSelectedDice();
   
-  const selectedDice = allDice.filter(dice => dice.isSelected);
+  // Before anything make sure our selected dice are valid: at least 1, and if multiple they are all the same face
+  if (selectedDice.length === 0) {
+    // Do nothing without dice - don't even need to warn the user
+    return;
+  }
+  else if (selectedDice.length > 1) {
+    // If we have multiple dice they need to be the same face
+    if (selectedDice.filter(currentDice => currentDice.value !== selectedDice[0].value).length > 0) {
+      notify.error("Select a single dice or only those with matching faces");
+      return;
+    }
+  }
+  
+  // If we're JUST rerolling Rest Stops, then it's free and doesn't advance our steps
+  if (!turnState.usingRestStop) {
+    // If this is our first re-roll we can just do it for free
+    if (turnState.step === 2) {
+      turnState.step++;
+    }
+    // Otherwise check if we have enough Memories
+    else {
+      if (resources.memories < 2) {
+        notify.error("Not enough Memories to reroll");
+        return;
+      }
+      
+      // We can re-roll at a Memories cost
+      changeMemories(-2);
+    }
+  }
+  
+  // If we made it this far let's do the actual reroll now
   selectedDice.forEach(selected => {
+    selected.resetPosition();
     processDice(selected);
   });
-  // Deselect all our dice after rolling
+  
+  // Deselect all our dice after rolling selected
   deselectAllDice();
+}
+
+function modifySelected(faceMod) {
+  // Spend 2 Memories to change the selected dice by the passed face mod
+  // Note this only works with a single selected dice
+  const selectedDice = getSelectedDice();
+  if (selectedDice.length === 1) {
+    if (resources.memories < 2) {
+      notify.error("Not enough Memories to spend. Need at least 2");
+      return;
+    }
+    
+    const potentialValue = selectedDice[0].value + faceMod;
+    if (potentialValue > 0 && potentialValue <= 6) {
+      changeDice(selectedDice[0], potentialValue);
+      changeMemories(-2);
+      deselectAllDice();
+      notify.success("Spent 2 Memories to change dice to " + potentialValue);
+    }
+    else if (potentialValue <= 0) {
+      notify.error("Can't modify - dice is already a 1");
+    }
+    else if (potentialValue > 6) {
+      notify.error("Can't modify - dice is already a 6");
+    }
+  }
+  else if (selectedDice.length > 1) {
+     notify.error("Select only a single dice to modify by spending Memories");
+  }
 }
 
 function processDice(diceObj) {
@@ -356,7 +483,6 @@ function processDice(diceObj) {
   markValidDice(diceObj);
   
   const maxSpins = randomRange(TWIRL_MIN, TWIRL_RAND);
-  console.log("Twirl loops", maxSpins);
   for (let i = 0; i <= maxSpins; i++) {
     setTimeout(() => {
       this.twirlDice(diceObj, i === maxSpins);
@@ -384,12 +510,8 @@ function twirlDice(diceObj, reset) {
 }
 
 function rollDice(diceObj) {
-  // Remove our old "show-X" class for our previous face
-  // Randomly roll a new value and set to our object
-  // Apply the new "show-Y" class to match
-  diceObj.diceEle.removeClass('show-' + diceObj.value);
-  diceObj.value = D6();
-  diceObj.diceEle.addClass('show-' + diceObj.value);
+  // Guess what? We're rolling the dice
+  changeDice(diceObj, D6());
   
   // Re-enable the hover class
   diceObj.hoverEle.addClass('allow-hover');
@@ -398,9 +520,21 @@ function rollDice(diceObj) {
   setTimeout(() => {
     diceObj.isRolling = false;
   }, ROLL_ANIMATION_MS);
-  
-  // Notify in the logs for now
-  console.log("Rolled", diceObj.value);
+}
+
+function changeDice(diceObj, newVal) {
+  // Remove our old "show-X" class for our previous face
+  // Set the new value to our object
+  // Apply the new "show-Y" class to match
+  diceObj.diceEle.removeClass('show-' + diceObj.value);
+  diceObj.value = newVal;
+  diceObj.diceEle.addClass('show-' + diceObj.value);
+}
+
+function changeMemories(amount) {
+  resources.memories += amount;
+  if (resources.memories < 0) { resources.memories = 0; }
+  if (resources.memories > 6) { resources.memories = 6; }
 }
 
 function markInvalidDice(diceObj) {
