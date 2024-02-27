@@ -426,7 +426,7 @@ function setupInstructionDialog() {
     ...DEFAULT_DIALOG_OPTS,
     width: 800,
     buttons: {
-      "Let's Play": function() {
+      "Let's Play": function() { // TODO Don't restart the turn/game on subsequent openings of the dialog, just the initial load
         $(this).dialog('close');
         Alpine.nextTick(() => {
           startTurn();
