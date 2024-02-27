@@ -22,10 +22,30 @@
   <body>
     <div class="toolbar">
       <div x-data="{ resources: resources }" class="toolbar-item toolbar-start">
+        <div class="resource-wrap">
+          <div class="resource-bar">
+            <span class="resource-bar-text">Fuel ⛽<br/><span x-text="resources.fuel"></span>/6</span>
+            <div class="resource-bar-color resource-fuel" :style="'width: ' + (resources.fuel/6*100) + '%;'"></div>
+          </div>
+          <div class="resource-bar">
+            <span class="resource-bar-text">Fun 😎<br/><span x-text="resources.fun"></span>/6</span>
+            <div class="resource-bar-color resource-fun" :style="'width: ' + (resources.fun/6*100) + '%;'"></div>
+          </div>
+          <div class="resource-bar">
+            <span class="resource-bar-text">Memories 📚<br/><span x-text="resources.memories"></span>/6</span>
+            <div class="resource-bar-color resource-memories" :style="'width: ' + (resources.memories/6*100) + '%;'"></div>
+          </div>
+          <div class="resource-bar">
+            <span class="resource-bar-text">Distance 🛣<br/><span x-text="resources.distance"></span>/6</span>
+            <div class="resource-bar-color resource-distance" :style="'width: ' + (resources.distance/6*100) + '%;'"></div>
+          </div>
+        </div>
+        <!--
         Fuel: <span x-text="resources.fuel"></span>
         Fun: <span x-text="resources.fun"></span>
         Distance: <span x-text="resources.distance"></span>
         Memories: <span x-text="resources.memories"></span>
+        -->
       </div>
       
       <div x-data="{ turnState: turnState }" class="toolbar-item toolbar-middle">
@@ -87,18 +107,20 @@
       <div class="page-instructions panel" x-data="{ show: true }">
         <div @click="show = !show" class="panel-header">&gt; Instructions</div>
         <div x-show="show" class="panel-content">
+          <div class="panel-buttons">
+            <button onclick="toggleInlineHelp()">❔ Inline <u>H</u>elp</button>
+            <button onclick="randomizeDiceColors()">🎲 <u>D</u>ice Colors</button>
+          </div>
           <ul>
             <li>Roll 5 six-sided dice</li>
             <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
             <li>Must place any Route + Travel combinations to gain Distance</li>
             <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
             <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
+            <b>Tips:</b><br/>
             <li>Can press <u>1-5</u> to select dice, <u>R</u> to reroll, and <u>E</u> to End Turn</li>
+            <li>Hold the <i>Shift</i> key while clicking a dice to select all matching faces</li>
           </ul>
-          <div class="panel-buttons">
-            <button onclick="toggleInlineHelp()">❔ Inline Help</button>
-            <button onclick="randomizeDiceColors()">🎲 <u>D</u>ice Colors</button>
-          </div>
         </div>
       </div>
       

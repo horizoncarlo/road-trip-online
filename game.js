@@ -13,7 +13,8 @@ const DEFAULT_DIALOG_OPTS = {
 }
 const LS_NAMES = { // Hardcoded names for local storage keys
   shownMobileNote: 'shownMobileNote',
-  shownInstructions: 'shownInstructions'
+  shownInstructions: 'shownInstructions',
+  inlineHelp: 'showInlineHelp',
 };
 const labelObj = {
   traffic: 'Traffic ⚁',
@@ -25,7 +26,7 @@ const labelObj = {
   route: 'Route ⚀',
   travel: 'Travel ⚅'
 };
-const notify = new Notyf({ duration: 4000, dismissible: true, position: { x: 'left', y: 'top' } });
+const notify = new Notyf({ duration: 4000, dismissible: true, position: { x: 'left', y: 'bottom' } });
 
 class Dice {
   constructor(diceIndex, value, isSelected, isAllocated, isRolling, wrapperEle, hoverEle, diceEle, originalX, originalY) {
@@ -69,7 +70,7 @@ let allDice = []; // Array of our Dice objects
 let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
 let instructionDialog;
-let showInlineHelp = true;
+let showInlineHelp = getLocalStorageBoolean(LS_NAMES.inlineHelp, true);
 let lostUsageDialog;
 let lostEffectsFun = false; // If true any Lost dice will apply to Fun, otherwise on false to Fuel
 let scoreCounter = {};
@@ -79,6 +80,7 @@ init();
 
 function init() {
   resources = applyStartingResources(); // Initialize our default resources
+  applyInlineHelp();
   
   // Populate our initial dice array
   for (let diceIndex = 0; diceIndex < DICE_COUNT; diceIndex++) {
@@ -89,7 +91,7 @@ function init() {
   setupInstructionDialog();
   setupLostUsageDialog();
   
-  // Add a hotkey listener
+  // Add a listener for hotkeys
   window.addEventListener('keyup', (event) => {
     if (event) {
       if (event.key === 'r' || event.key === 'R') {
@@ -100,6 +102,9 @@ function init() {
       }
       else if (event.key === 'd' || event.key === 'D') {
         randomizeDiceColors();
+      }
+      else if (event.key === 'h' || event.key === 'H') {
+        toggleInlineHelp();
       }
       else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
       else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
@@ -176,8 +181,9 @@ function init() {
         },
       });
       // Add the click after draggable so that dragging doesn't fire click
-      currentDice.wrapperEle.click(function() {
-        toggleDiceSelection(currentDice);
+      currentDice.wrapperEle.click(function(clickEvent) {
+        // Pass the Shift key to select all matching dice if held while clicking
+        toggleDiceSelection(currentDice, clickEvent.shiftKey);
       });
     });
     
@@ -345,8 +351,8 @@ function applyScore(scoreCounter) {
   // Log what's going on this turn
   if (fuelChange !== 0) { logEvent(resourcePrefix(fuelChange) + fuelChange + " Fuel"); }
   if (funChange !== 0) { logEvent(resourcePrefix(funChange) + funChange + " Fun"); }
-  if (distanceChange !== 0) { logEvent(resourcePrefix(distanceChange) + distanceChange + " Distance"); }
   if (memoryChange !== 0) { logEvent(resourcePrefix(memoryChange) + memoryChange + " Memories"); }
+  if (distanceChange !== 0) { logEvent(resourcePrefix(distanceChange) + distanceChange + " Distance"); }
   
   // Finally modify our resources by the changes
   resources.fuel += fuelChange;
@@ -381,34 +387,32 @@ function endTurn(scoreCounter) {
   scoreCounter = {};
   
   // Check if we won or lost and start a new turn
-  Alpine.nextTick(() => {
-    setTimeout(() => {
-      let gameOver = false;
-      if (resources.fuel <= 0) {
-        logEvent("You lose! Ran out of Fuel");
-        alert("You lose! Ran out of Fuel :(");
-        gameOver = true;
-      }
-      else if (resources.fun <= 0) {
-        logEvent("You lose! Ran out of Fun");
-        alert("You lose! Ran out of Fun :(");
-        gameOver = true;
-      }
-      else if (resources.distance >= 6) {
-        logEvent("You won the game!");
-        logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories);
-        alert("You won and reached your destination!");
-        gameOver = true;
-      }
-      
-      if (gameOver) {
-        restartGame();
-      }
-      else {
-        startTurn();
-      }
-    }, 100);
-  }); // Let the page render updates (primarily our resources count) before checking
+  setTimeout(() => {
+    let gameOver = false;
+    if (resources.fuel <= 0) {
+      logEvent("You lose! Ran out of Fuel");
+      alert("You lose! Ran out of Fuel :(");
+      gameOver = true;
+    }
+    else if (resources.fun <= 0) {
+      logEvent("You lose! Ran out of Fun");
+      alert("You lose! Ran out of Fun :(");
+      gameOver = true;
+    }
+    else if (resources.distance >= 6) {
+      logEvent("You won the game!");
+      logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories);
+      alert("You won and reached your destination!");
+      gameOver = true;
+    }
+    
+    if (gameOver) {
+      restartGame();
+    }
+    else {
+      startTurn();
+    }
+  }, 250); // Intentionally wait a tiny bit, so the dice don't just start re-rolling and confuse the user
 }
 
 function applyStartingResources() {
@@ -487,10 +491,19 @@ function rollAllDice() {
   allDice.forEach(currentDice => this.processDice(currentDice));
 }
 
-function toggleDiceSelection(diceObj) {
+function toggleDiceSelection(diceObj, selectAll) {
   // Ignore selection if we're rolling
   if (!diceObj.isRolling) {
     diceObj.isSelected = !diceObj.isSelected;
+    
+    // Apply our same flag to any matching faces if requested
+    if (selectAll) {
+      allDice.forEach(currentDice => {
+        if (diceObj.value === currentDice.value) {
+          currentDice.isSelected = diceObj.isSelected;
+        }
+      });
+    }
   }
 }
 
@@ -654,25 +667,26 @@ function markValidDice(diceObj) {
 
 function toggleInlineHelp() {
   showInlineHelp = !showInlineHelp;
-  if (showInlineHelp) {
-    $('.dice-helper').show();
-    $('.dice-helper-text').show();
-    $('.dice-helper-text-big').show();
-  }
-  else {
-    $('.dice-helper').hide();
-    $('.dice-helper-text').hide();
-    $('.dice-helper-text-big').hide();
-  }
-  $('.dice-dropzone').toggleClass('dropzone-pad');
+  setLocalStorageItem(LS_NAMES.inlineHelp, showInlineHelp);
+  applyInlineHelp();
+}
+
+function applyInlineHelp() {
+  $('.dice-helper').toggle(showInlineHelp);
+  $('.dice-helper-text').toggle(showInlineHelp);
+  $('.dice-helper-text-big').toggle(showInlineHelp);
+  $('.dice-dropzone').toggleClass('dropzone-pad', !showInlineHelp);
 }
 
 function getLocalStorageItem(key) {
   return window.localStorage.getItem(key);
 }
 
-function getLocalStorageBoolean(key) {
+function getLocalStorageBoolean(key, optionalDefault) {
   const fromStorage = window.localStorage.getItem(key);
+  if (!fromStorage && typeof optionalDefault !== 'undefined') {
+    return optionalDefault;
+  }
   return fromStorage && fromStorage === 'true' ? true : false;
 }
 

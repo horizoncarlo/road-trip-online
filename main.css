@@ -8,7 +8,9 @@
   --dice-pip-color-1: white;
   --dice-pip-color-2: #333333;
   --basic-gray: #333333;
+  --light-gray: #DEDEDE;
   --standard-font-size: 16px;
+  --toolbar-height: 40px;
 }
 
 html,
@@ -17,6 +19,10 @@ body {
   margin: 0;
   width: 100%;
   height: 100vh;
+}
+
+html {
+  min-width: 1200px;
 }
 
 body {
@@ -63,6 +69,7 @@ html, body, button, input {
 
 .toolbar {
   width: calc(100% - 20px);
+  height: calc(var(--toolbar-height) - 1px); /* Account for our border */
   padding: 10px;
   border-radius: 0;
   border-bottom: 1px solid black;
@@ -70,6 +77,7 @@ html, body, button, input {
 
 .toolbar-item {
   display: inline-block;
+  vertical-align: top;
   width: calc((100% / 3) - 10px);
 }
 
@@ -93,10 +101,11 @@ html, body, button, input {
 .panel {
   position: absolute;
   width: 20vw;
+  margin-top: -50px;
 }
 
 .panel-header {
-  background-color: #DEDEDE;
+  background-color: var(--light-gray);
   padding: 10px;
   font-size: 18px;
   border-radius: 5px;
@@ -120,7 +129,7 @@ html, body, button, input {
 .panel-buttons > * {
   display: block;
   width: 70%;
-  margin-top: 5px;
+  margin-bottom: 5px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -169,6 +178,48 @@ html, body, button, input {
   height: 150px;
   margin-left: 10px;
   border: 2px inset black;
+}
+
+.resource-wrap {
+  display: flex;
+  gap: 10px;
+}
+
+.resource-bar {
+  border: 1px inset black;
+  background-color: var(--light-gray);
+  height: var(--toolbar-height);
+  width: calc(100% / 4);
+}
+
+.resource-bar-text {
+  float: left;
+  padding-left: 5px;
+}
+
+.resource-bar-color {
+  background-color: var(--basic-gray);
+  border-right: 1px dashed yellow;
+  height: var(--toolbar-height);
+  transition-timing-function: ease-out;
+  transition: width 2s;
+  /* Width is calculated automatically to fill in the progress bar */
+}
+
+.resource-fuel {
+  background-color: sienna;
+}
+
+.resource-fun {
+  background-color: mediumorchid;
+}
+
+.resource-memories {
+  background-color: limegreen;
+}
+
+.resource-distance {
+  background-color: goldenrod;
 }
 
 .dice-helper,
