@@ -25,10 +25,11 @@ const labelObj = {
   route: 'Route ⚀',
   travel: 'Travel ⚅'
 };
-const notify = new Notyf();
+const notify = new Notyf({ duration: 4000, dismissible: true, position: { x: 'left', y: 'top' } });
 
 class Dice {
   constructor(diceIndex, value, isSelected, isAllocated, isRolling, wrapperEle, hoverEle, diceEle, originalX, originalY) {
+    this.id = 'dice' + rand.random(); // For use with Alpine.js x-for to track any movement
     this.diceIndex = diceIndex;
     this.value = value;
     this.isSelected = isSelected || false;
@@ -63,8 +64,9 @@ const rand = new MersenneTwister();
 4: Placed all dice, can reroll/+1/-1 still, and can Score
 After scoring go back to Step 1
 */
-let turnState = { step: 1, usingRestStop: false, allocatedDice: 0 };
+let turnState = { count: 0, step: 1, usingRestStop: false, allocatedDice: 0 };
 let allDice = []; // Array of our Dice objects
+let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
 let instructionDialog;
 let showInlineHelp = true;
@@ -93,6 +95,12 @@ function init() {
       if (event.key === 'r' || event.key === 'R') {
         rerollSelected();
       }
+      else if (event.key === 'e' || event.key === 'E') {
+        tryToEndTurn();
+      }
+      else if (event.key === 'd' || event.key === 'D') {
+        randomizeDiceColors();
+      }
       else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
       else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
       else if (event.key === '3') { toggleDiceSelection(allDice[2]); }
@@ -114,6 +122,7 @@ function init() {
     // Once we have a reference to Alpine we want to make some variables reactive, so
     //  changes are immediately shown on the UI
     allDice = Alpine.reactive(allDice);
+    travelLog = Alpine.reactive(travelLog);
     turnState = Alpine.reactive(turnState);
     resources = Alpine.reactive(resources);
     
@@ -126,6 +135,14 @@ function init() {
       // Maintain the allocatedDice count
       turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
     });
+    /* TODO If sorting after rolling is desired. Note this fires on re-rolls too, which is confusing, so likely need a flag or to leverage turnState.step
+    Alpine.effect(() => {
+      if (allDice.filter(currentDice => currentDice.isRolling).length === 0) {
+        allDice.sort((a, b) => a.value > b.value);
+        allDice.forEach((currentDice, index) => currentDice.diceIndex = index);
+      }
+    });
+    */
     
     allDice.forEach(currentDice => {
       // Now that our array is rendered we can assign our elements to the allDice
@@ -150,9 +167,9 @@ function init() {
           $('.dice-dropzone').each(function(index, dropzoneEle) {
             const dropzoneObj = $(dropzoneEle);
             dropzoneObj.droppable({
-              activeClass: (currentDice.value == dropzoneObj.attr('dice-allowed')) ?
+              activeClass: (currentDice.value === getDiceAllowed(dropzoneObj)) ?
                 'dice-dropzone-active' : '',
-              hoverClass: (currentDice.value == dropzoneObj.attr('dice-allowed')) ?
+              hoverClass: (currentDice.value === getDiceAllowed(dropzoneObj)) ?
                 'dice-dropzone-hover' : ''
             });
           });
@@ -167,11 +184,12 @@ function init() {
     $('.dice-dropzone').droppable({
       drop: function (event, ui) {
         const currentDice = allDice[ui.draggable.attr('data-index')];
-        if (currentDice.value == $(this).attr('dice-allowed')) {
+        if (currentDice.value === getDiceAllowed($(this))) {
           markValidDice(currentDice);
           currentDice.isAllocated = true;
         }
         else {
+          logEvent("Wrong value " + currentDice.value + " in slot " + labelObj[this.id]);
           markInvalidDice(currentDice);
         }
       }
@@ -184,19 +202,9 @@ function init() {
     }
     else {
       // Start up the game
-      startTurn();
+      restartGame();
     }
-    
-    // Scale the page to fit
-    ensurePageFit();
   });
-}
-
-function ensurePageFit() {
-  // The game plays sooooooo much more smoothly and nicer if we don't have to scroll up and down
-  // To that end we scale the contents as best we can to fit the height
-  // Involves some voodoo
-  // TTODO
 }
 
 function resetDicePositions() {
@@ -207,11 +215,13 @@ function resetDicePositions() {
 
 function tryToEndTurn() {
   if (turnState.step < 3) {
+    logEvent("Must reroll the dice");
     notify.error("Must reroll the dice once each turn");
     return;
   }
   if (turnState.allocatedDice < DICE_COUNT) { // Unallocated dice
-    notify.error("Place all your dice into a slot (missing " + (DICE_COUNT - turnState.allocatedDice) + ")");
+    logEvent("All dice must be in a valid slot");
+    notify.error("Place all your dice into a valid slot (missing " + (DICE_COUNT - turnState.allocatedDice) + ")");
     return;
   }
   
@@ -234,10 +244,10 @@ function tryToEndTurn() {
         if (currentDice.value === 6) { sixFaceCount++; }
         
         // Check if the dice number matches the dropzone - if not it's invalid
-        if (currentDice.value != dropzoneObj.attr('dice-allowed')) {
+        if (currentDice.value !== getDiceAllowed(dropzoneObj)) {
           invalidDice.push({
             value: currentDice.value,
-            allowed: parseInt(dropzoneObj.attr('dice-allowed')),
+            allowed: getDiceAllowed(dropzoneObj),
             label: labelObj[dropzoneEle.id]
           });
           markInvalidDice(currentDice);
@@ -254,9 +264,9 @@ function tryToEndTurn() {
   
   // Check for validation cases before continuing
   if (invalidDice.length > 0) { // Dice in the wrong slot
-    let message = 'Dice are in the wrong slot:<ul>';
+    let message = 'Invalid dice:<ul>';
     invalidDice.forEach(dice => {
-      message += '<li>' + dice.label + ' has value ' + dice.value + ' instead of ' + dice.allowed + '</li>';
+      message += '<li>' + dice.label + ' needs ' + dice.allowed + ', has ' + dice.value + '</li>';
     })
     message += '</ul>';
     notify.error(message);
@@ -270,9 +280,16 @@ function tryToEndTurn() {
     
     // If we didn't meet our expected Distance, then complain
     if (scoreCounter.route !== expectedDistance || scoreCounter.travel !== expectedDistance) {
-      notify.error("You must try to get Distance by filling in Route + Travel first");
+      logEvent("Must place Route + Travel");
+      notify.error("If possible 1s and 6s must be in Route + Travel to get Distance");
       return;
     }
+  }
+  
+  // Also check that we don't have an incomplete Route/Travel combo, aka trying to dump a 1 in there instead of Lost
+  if (safeNum(scoreCounter.route) !== safeNum(scoreCounter.travel)) {
+    notify.error("Cannot have incomplete Distance, need both Route + Travel");
+    return;
   }
   
   // Right before we apply our score, check what the user wants to do with any Lost
@@ -325,12 +342,17 @@ function applyScore(scoreCounter) {
     }
   }
   
+  // Log what's going on this turn
+  if (fuelChange !== 0) { logEvent(resourcePrefix(fuelChange) + fuelChange + " Fuel"); }
+  if (funChange !== 0) { logEvent(resourcePrefix(funChange) + funChange + " Fun"); }
+  if (distanceChange !== 0) { logEvent(resourcePrefix(distanceChange) + distanceChange + " Distance"); }
+  if (memoryChange !== 0) { logEvent(resourcePrefix(memoryChange) + memoryChange + " Memories"); }
+  
   // Finally modify our resources by the changes
-  console.log("Score changes: fuel=" + fuelChange + " fun=" + funChange + " distance=" + distanceChange + " memory=" + memoryChange);
   resources.fuel += fuelChange;
   resources.fun += funChange;
   resources.distance += distanceChange;
-  changeMemories(resources.memories);
+  changeMemories(memoryChange);
   
   // Check for maximum Fuel and Fun
   // Note Memories are safely handled in the function above
@@ -339,12 +361,17 @@ function applyScore(scoreCounter) {
 }
 
 function restartGame() {
+  logEvent("New game started!");
+  turnState.count = 0;
+  randomizeDiceColors();
   applyStartingResources();
   startTurn();
 }
 
 function startTurn() {
   turnState.step = 1;
+  turnState.count++;
+  logEvent("Turn " + turnState.count);
   rollAllDice();
 }
 
@@ -358,14 +385,18 @@ function endTurn(scoreCounter) {
     setTimeout(() => {
       let gameOver = false;
       if (resources.fuel <= 0) {
+        logEvent("You lose! Ran out of Fuel");
         alert("You lose! Ran out of Fuel :(");
         gameOver = true;
       }
-      if (resources.fun <= 0) {
+      else if (resources.fun <= 0) {
+        logEvent("You lose! Ran out of Fun");
         alert("You lose! Ran out of Fun :(");
         gameOver = true;
       }
-      if (resources.distance >= 6) {
+      else if (resources.distance >= 6) {
+        logEvent("You won the game!");
+        logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories);
         alert("You won and reached your destination!");
         gameOver = true;
       }
@@ -434,7 +465,7 @@ function setupInstructionDialog() {
       "Let's Play": function() {
         $(this).dialog('close');
         Alpine.nextTick(() => {
-          startTurn();
+          restartGame();
         });
       },
     }
@@ -504,7 +535,8 @@ function rerollSelected() {
         return;
       }
       
-      // We can reroll at a Memories cost
+      // We reroll at a Memories cost
+      logEvent("Spent 2 Memories to reroll");
       changeMemories(-2);
     }
   }
@@ -532,6 +564,7 @@ function modifySelected(faceMod) {
     const potentialValue = selectedDice[0].value + faceMod;
     if (potentialValue > 0 && potentialValue <= 6) {
       changeDice(selectedDice[0], potentialValue);
+      logEvent("Spent 2 Memories to modify");
       changeMemories(-2);
       deselectAllDice();
       notify.success("Spent 2 Memories to change dice to " + potentialValue);
@@ -649,6 +682,51 @@ function setLocalStorageItem(key, value) {
 
 function removeLocalStorageItem(key) {
   window.localStorage.removeItem(key);
+}
+
+function randomizeDiceColors() {
+  document.body.style.setProperty('--dice-face-color-1', randomColor());
+  document.body.style.setProperty('--dice-face-color-2', randomColor());
+  document.body.style.setProperty('--dice-face-color-3', randomColor());
+  document.body.style.setProperty('--dice-pip-color-1', randomColor());
+  document.body.style.setProperty('--dice-pipcolor-2', randomColor());
+}
+
+function resourcePrefix(change) {
+  if (typeof change === 'number' && change > 0) {
+    return "+";
+  }
+  return "";
+}
+
+function getDiceAllowed(dropzoneObj) {
+  if (dropzoneObj) {
+    const potentialValue = dropzoneObj.attr('dice-allowed');
+    if (potentialValue && !isNaN(parseInt(potentialValue))) {
+      return parseInt(potentialValue);
+    }
+  }
+  return -1;
+}
+
+function logEvent(event) {
+  travelLog.push(event);
+  
+  // Scroll to the bottom of the log
+  const scrollEle = document.getElementById('travel-log-scroll');
+  if (scrollEle) {
+    Alpine.nextTick(() => scrollEle.scrollTo(0, scrollEle.scrollHeight));
+  }
+}
+
+function randomColor() {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (var i = 0; i < 6; i++) {
+    color += letters[Math.floor(rand.random() * 16)];
+  }
+  
+  return color;
 }
 
 function randomRange(min, randomCount) {

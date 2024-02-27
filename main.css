@@ -2,6 +2,11 @@
   --dice-size: 100px;
   --dice-size-half: calc(var(--dice-size) / 2);
   --dice-anim-ms: 100ms;
+  --dice-face-color-1: rgba(2,0,36,1);
+  --dice-face-color-2: rgba(9,9,121,1);
+  --dice-face-color-3: rgba(0,212,255,1);
+  --dice-pip-color-1: white;
+  --dice-pip-color-2: #333333;
   --basic-gray: #333333;
   --standard-font-size: 16px;
 }
@@ -27,18 +32,15 @@ body {
 .dice-slots {
   box-shadow: 5px 5px 10px var(--basic-gray);
 }
-
 .toolbar {
   background-color: rgba(255, 255, 255, 0.7);
   z-index: 1000;
 }
 .panel {
   background-color: rgba(255, 255, 255, 0.8);
-  z-index: 5;
 }
 .dice-slots {
   background-color: rgba(255, 255, 255, 0.95);
-  z-index: 20;
 }
 
 button {
@@ -64,14 +66,33 @@ html, body, button, input {
   padding: 10px;
   border-radius: 0;
   border-bottom: 1px solid black;
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
+}
+
+.toolbar-item {
+  display: inline-block;
+  width: calc((100% / 3) - 10px);
+}
+
+.toolbar-start {
+  text-align: left;
+}
+.toolbar-middle {
+  text-align: center;
+}
+.toolbar-end {
+  text-align: right;
+}
+
+.toolbar-divider {
+  border-right: 3px solid var(--basic-gray);
+  margin-left: 6px;
+  margin-right: 14px;
+  height: 40px;
 }
 
 .panel {
   position: absolute;
-  max-width: 20vw;
+  width: 20vw;
 }
 
 .panel-header {
@@ -83,21 +104,41 @@ html, body, button, input {
 }
 
 .panel-content {
+  overflow-y: auto;
+  max-height: 50vh;
   padding: 20px;
 }
 
-.roll-log {
-  right: 20px;
+.panel-content ul {
+  padding-left: 10px;
+}
+
+.panel-buttons {
+  width: 100%;
+}
+
+.panel-buttons > * {
+  display: block;
+  width: 70%;
+  margin-top: 5px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .page-instructions {
   left: 20px;
 }
 
-.center {
-  text-align: center;
-  margin-left: auto;
-  margin-right: auto;
+.travel-log {
+  right: 20px;
+}
+
+.travel-log span {
+  display: block;
+}
+
+.travel-log span::before {
+  content: '🟇 ';
 }
 
 .dice-tray-wrap {
@@ -106,14 +147,9 @@ html, body, button, input {
   padding: 20px 0 20px 0;
 }
 
-.dice-tray,
-.dice-tray-buttons {
+.dice-tray {
   display: inline-block;
   vertical-align: middle;
-}
-
-.dice-tray-buttons {
-  padding-left: 30px;
 }
 
 .dice-slots-wrap {
@@ -121,7 +157,6 @@ html, body, button, input {
 }
 
 .dice-slots {
-  position: relative;
   width: fit-content;
   min-width: 35vw;
   margin-left: auto;
@@ -211,13 +246,13 @@ html, body, button, input {
   position: absolute;
   width: var(--dice-size);
   height: var(--dice-size);
-  background: linear-gradient(0deg, rgba(2,0,36,1) 0%, rgba(9,9,121,1) 40%, rgba(0,212,255,1) 100%);
+  background: linear-gradient(0deg, var(--dice-face-color-1) 0%, var(--dice-face-color-2) 40%, var(--dice-face-color-3) 100%);
   border: 1px solid var(--basic-gray);
 }
 
 .dice-pip {
   background-color: white;
-  background: radial-gradient(circle, white 0%, var(--basic-gray) 500%);
+  background: radial-gradient(circle, var(--dice-pip-color-1) 0%, var(--dice-pip-color-2) 400%);
   border: 1px solid black;
   display: block;
   width: calc(var(--dice-size)/5);

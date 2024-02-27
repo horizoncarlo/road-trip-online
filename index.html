@@ -21,26 +21,41 @@
 
   <body>
     <div class="toolbar">
-      <div x-data="{ resources: resources }" style="flex: 1;">
+      <div x-data="{ resources: resources }" class="toolbar-item toolbar-start">
         Fuel: <span x-text="resources.fuel"></span>
         Fun: <span x-text="resources.fun"></span>
         Distance: <span x-text="resources.distance"></span>
         Memories: <span x-text="resources.memories"></span>
       </div>
       
-      <div style="flex: 1;" x-data="{ turnState: turnState }">
-      <button onclick="tryToEndTurn()" :disabled="turnState.step < 3 || turnState.allocatedDice < DICE_COUNT">End Turn</button>
+      <div x-data="{ turnState: turnState }" class="toolbar-item toolbar-middle">
+        <button onclick="modifySelected(1)" :disabled="turnState.step === 1" title="Spend 2 Memories to increase the selected dice by 1">+1</button>
+        <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" title="Spend 2 Memories to decrease the selected dice by 1">-1</button>
+        <button onclick="rerollSelected()" :disabled="turnState.step === 1" title="Reroll the selected dice">
+          <template x-if="turnState.usingRestStop">
+            <span><u>R</u>eroll (free Rest Stop)</span>
+          </template>
+          <template x-if="!turnState.usingRestStop">
+            <span>
+              <span x-show="turnState.step > 2"><u>R</u>eroll for 2 Memories</span>
+              <span x-show="turnState.step <= 2"><span style="color: red;">!</span> <u>R</u>eroll Selected</span>
+            </span>
+          </template>
+        </button>
+        <span class="toolbar-divider"></span>
+        <button onclick="tryToEndTurn()" title="End your turn after you rerolled once and allocated all dice"><u>E</u>nd Turn</button>
       </div>
-      <div style="justify-content: end;">
-      <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }">New Game</button>
-      <button onclick="openInstructionDialog()">How to Play</button>
+      
+      <div class="toolbar-item toolbar-end">
+        <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }" title="Discard your current drive and start a new one">New Game</button>
+        <button onclick="openInstructionDialog()"><span style="color: cornflowerblue;">?</span> How to Play</button>
       </div>
     </div>
     
     <div class="page-content">
       <div class="dice-tray-wrap">
         <div class="dice-tray">
-          <template x-data="{ loop: allDice }" x-for="(diceObj) in loop">
+          <template x-data="{ loop: allDice }" x-for="diceObj in loop" :key="diceObj.id">
             <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
                 x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
                 class="dice-wrapper">
@@ -67,23 +82,6 @@
             </div>
           </template>
         </div>
-        <div x-data="{ turnState: turnState }" class="dice-tray-buttons">
-          <br/>
-          <button onclick="rerollSelected()" :disabled="turnState.step === 1">
-            <template x-if="turnState.usingRestStop">
-              <span><u>R</u>eroll (free Rest Stop)</span>
-            </template>
-            <template x-if="!turnState.usingRestStop">
-              <span>
-                <span x-show="turnState.step > 2"><u>R</u>eroll for 2 Memories</span>
-                <span x-show="turnState.step <= 2"><u>R</u>eroll Selected</span>
-              </span>
-            </template>
-          </button>
-          <!-- Technically COULD disable the +1/-1 buttons if we don't have enough Memories, but that can be confusing when learning the rules -->
-          <button onclick="modifySelected(1)" :disabled="turnState.step === 1">+1</button>
-          <button onclick="modifySelected(-1)" :disabled="turnState.step === 1">-1</button>
-        </div>
       </div>
       
       <div class="page-instructions panel" x-data="{ show: true }">
@@ -95,22 +93,27 @@
             <li>Must place any Route + Travel combinations to gain Distance</li>
             <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
             <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
+            <li>Can press <u>1-5</u> to select dice, <u>R</u> to reroll, and <u>E</u> to End Turn</li>
           </ul>
-          <div class="center">
-            <button onclick="toggleInlineHelp()">Toggle Help</button>
+          <div class="panel-buttons">
+            <button onclick="toggleInlineHelp()">❔ Inline Help</button>
+            <button onclick="randomizeDiceColors()">🎲 <u>D</u>ice Colors</button>
           </div>
         </div>
       </div>
       
-      <div class="roll-log panel" x-data="{ show: true }">
-        <div @click="show = !show" class="panel-header">&gt; Travel Log</div>
-        <div x-show="show" class="panel-content">
-          <!-- TTODO Travel log -->
+      <div class="travel-log panel" x-data="{ show: true }">
+        <div class="panel-header" @click="show = !show">&gt; Travel Log</div>
+        <div id="travel-log-scroll" class="panel-content" x-show="show" x-data="{ log: travelLog }">
+          <template x-for="entry in log">
+            <span x-text="entry"></span>
+          </template>
         </div>
       </div>
       
       <div class="dice-slots-wrap">
         <div class="dice-slots">
+          <!-- Weird code spacing was because otherwise there was rendered whitespace between our dropzone divs -->
           <div id="traffic" x-data="{ label: labelObj.traffic }" class="dice-dropzone" dice-allowed="2">
             <label x-text="label"></label>
             <span class="dice-socket">⚁</span>
