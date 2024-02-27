@@ -14,6 +14,32 @@ body {
   height: 100vh;
 }
 
+body {
+  background: center / cover no-repeat url("./backgrounds/IMG_0813.jpg") blue;
+}
+
+.toolbar,
+.panel,
+.dice-slots {
+  border-radius: 5px;
+}
+.panel,
+.dice-slots {
+  box-shadow: 5px 5px 10px var(--basic-gray);
+}
+
+.toolbar {
+  background-color: rgba(255, 255, 255, 0.7);
+  z-index: 1000;
+}
+.panel {
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 5;
+}
+.dice-slots {
+  background-color: rgba(255, 255, 255, 0.95);
+  z-index: 20;
+}
 
 button {
   padding: 8px 10px 8px 10px;
@@ -36,16 +62,58 @@ html, body, button, input {
 .toolbar {
   width: calc(100% - 20px);
   padding: 10px;
+  border-radius: 0;
   border-bottom: 1px solid black;
   display: flex;
   flex-direction: row;
   gap: 10px;
 }
 
-.dice-tray {
+.panel {
+  position: absolute;
+  max-width: 20vw;
+}
+
+.panel-header {
+  background-color: #DEDEDE;
+  padding: 10px;
+  font-size: 18px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.panel-content {
+  padding: 20px;
+}
+
+.roll-log {
+  right: 20px;
+}
+
+.page-instructions {
+  left: 20px;
+}
+
+.center {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.dice-tray-wrap {
   width: 100%;
   text-align: center;
-  padding: 40px 0 40px 0;
+  padding: 20px 0 20px 0;
+}
+
+.dice-tray,
+.dice-tray-buttons {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.dice-tray-buttons {
+  padding-left: 30px;
 }
 
 .dice-slots-wrap {
@@ -53,9 +121,12 @@ html, body, button, input {
 }
 
 .dice-slots {
+  position: relative;
   width: fit-content;
+  min-width: 35vw;
   margin-left: auto;
   margin-right: auto;
+  padding: 15px 15px 0 15px;
 }
 
 .welcome-image {
@@ -86,6 +157,7 @@ html, body, button, input {
   padding-bottom: 5px;
   text-align: center;
   vertical-align: middle;
+  background-color: white;
   border: 3px inset #777777;
   border-radius: 10px;
   margin-bottom: 20px;

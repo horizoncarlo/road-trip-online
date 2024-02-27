@@ -21,7 +21,6 @@
 
   <body>
     <div class="toolbar">
-      <!-- TODO Better styling - little gas tank that fills up, bigger smiling face, etc. Plus animations on change -->
       <div x-data="{ resources: resources }" style="flex: 1;">
         Fuel: <span x-text="resources.fuel"></span>
         Fun: <span x-text="resources.fun"></span>
@@ -39,34 +38,36 @@
     </div>
     
     <div class="page-content">
-      <div class="dice-tray">
-        <template x-data="{ loop: allDice }" x-for="(diceObj) in loop">
-          <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
-              x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
-              class="dice-wrapper">
-            <div x-bind:id="'hover' + diceObj.diceIndex" class="allow-hover">
-              <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
-                <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
-                <div class="dice-face dice-face-2"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                <div class="dice-face dice-face-3"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                <div class="dice-face dice-face-4">
-                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                </div>
-                <div class="dice-face dice-face-5">
-                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                  <div class="column"><span class="dice-pip"></span></div>
-                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                </div>
-                <div class="dice-face dice-face-6">
-                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
-                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+      <div class="dice-tray-wrap">
+        <div class="dice-tray">
+          <template x-data="{ loop: allDice }" x-for="(diceObj) in loop">
+            <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
+                x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
+                class="dice-wrapper">
+              <div x-bind:id="'hover' + diceObj.diceIndex" class="allow-hover">
+                <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
+                  <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
+                  <div class="dice-face dice-face-2"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  <div class="dice-face dice-face-3"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  <div class="dice-face dice-face-4">
+                    <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                    <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  </div>
+                  <div class="dice-face dice-face-5">
+                    <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                    <div class="column"><span class="dice-pip"></span></div>
+                    <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  </div>
+                  <div class="dice-face dice-face-6">
+                    <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                    <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </template>
-        <div x-data="{ turnState: turnState }">
+          </template>
+        </div>
+        <div x-data="{ turnState: turnState }" class="dice-tray-buttons">
           <br/>
           <button onclick="rerollSelected()" :disabled="turnState.step === 1">
             <template x-if="turnState.usingRestStop">
@@ -85,11 +86,9 @@
         </div>
       </div>
       
-      <!-- TODO Do a score changelog on the right side of the page? Shows fuel/fun/etc. modifiers after you press End turn. Ideally UI is clear enough to see what happened. Maybe leaves a +/-X below the resource bar until the next turn -->
-      <!-- TODO Better styling -->
-      <div class="page-instructions" x-data="{ show: true }" style="float: left; width: 300px;">
-        <div @click="show = !show">&gt; Instructions</div>
-        <div x-show="show">
+      <div class="page-instructions panel" x-data="{ show: true }">
+        <div @click="show = !show" class="panel-header">&gt; Instructions</div>
+        <div x-show="show" class="panel-content">
           <ul>
             <li>Roll 5 six-sided dice</li>
             <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
@@ -97,7 +96,16 @@
             <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
             <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
           </ul>
-          <button onclick="toggleInlineHelp()">Toggle Help</button>
+          <div class="center">
+            <button onclick="toggleInlineHelp()">Toggle Help</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="roll-log panel" x-data="{ show: true }">
+        <div @click="show = !show" class="panel-header">&gt; Travel Log</div>
+        <div x-show="show" class="panel-content">
+          <!-- TTODO Travel log -->
         </div>
       </div>
       

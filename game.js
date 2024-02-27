@@ -11,7 +11,6 @@ const DEFAULT_DIALOG_OPTS = {
   height: 'auto',
   width: 400,
 }
-// TODO Do some more storage - current game state is saved to prevent losing data on refresh? Save eventual customization options too. Save Inline Help toggle state
 const LS_NAMES = { // Hardcoded names for local storage keys
   shownMobileNote: 'shownMobileNote',
   shownInstructions: 'shownInstructions'
@@ -77,7 +76,6 @@ let resources; // Track our Fuel/Fun/Distance/Memories
 init();
 
 function init() {
-  // TODO Likely store state like score and current dice in session/local storage via Alpine.persist plugin, to not restart the game on refresh
   resources = applyStartingResources(); // Initialize our default resources
   
   // Populate our initial dice array
@@ -188,7 +186,17 @@ function init() {
       // Start up the game
       startTurn();
     }
+    
+    // Scale the page to fit
+    ensurePageFit();
   });
+}
+
+function ensurePageFit() {
+  // The game plays sooooooo much more smoothly and nicer if we don't have to scroll up and down
+  // To that end we scale the contents as best we can to fit the height
+  // Involves some voodoo
+  // TTODO
 }
 
 function resetDicePositions() {
@@ -347,9 +355,8 @@ function endTurn(scoreCounter) {
   
   // Check if we won or lost and start a new turn
   Alpine.nextTick(() => {
-    setTimeout(() => { // TODO Need to wait an extra setTimeout because we're temporarily using an alert() which blocks the page from processing changes
+    setTimeout(() => {
       let gameOver = false;
-      // TODO Better way to notify of loss/victory, with a prompt to play again, etc.
       if (resources.fuel <= 0) {
         alert("You lose! Ran out of Fuel :(");
         gameOver = true;
@@ -359,7 +366,7 @@ function endTurn(scoreCounter) {
         gameOver = true;
       }
       if (resources.distance >= 6) {
-        alert("You won and reached your destination!"); // TODO Could be fun to randomize destinations, and show a little car with a progress bar at the top of the page for Distance
+        alert("You won and reached your destination!");
         gameOver = true;
       }
       
@@ -391,8 +398,6 @@ function safeNum(val) {
 }
 
 function setupLostUsageDialog() {
-  // TODO Replace jQuery UI dialogs with native/custom rolled, and remove jQuery UI CSS
-  // TODO Let the user choose where EACH Lost dice applies, via radio buttons in the dialog. Submit buttons would be "Confirm", "All Fun", "All Fuel"
   lostUsageDialog = $('#dialog-lost').dialog({
     ...DEFAULT_DIALOG_OPTS,
     buttons: {
@@ -426,7 +431,7 @@ function setupInstructionDialog() {
     ...DEFAULT_DIALOG_OPTS,
     width: 800,
     buttons: {
-      "Let's Play": function() { // TODO Don't restart the turn/game on subsequent openings of the dialog, just the initial load
+      "Let's Play": function() {
         $(this).dialog('close');
         Alpine.nextTick(() => {
           startTurn();
@@ -616,7 +621,6 @@ function markValidDice(diceObj) {
 
 function toggleInlineHelp() {
   showInlineHelp = !showInlineHelp;
-  // TODO Clean this up
   if (showInlineHelp) {
     $('.dice-helper').show();
     $('.dice-helper-text').show();
