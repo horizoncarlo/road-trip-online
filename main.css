@@ -3,6 +3,7 @@
   --dice-size-half: calc(var(--dice-size) / 2);
   --dice-anim-ms: 100ms;
   --basic-gray: #333333;
+  --standard-font-size: 16px;
 }
 
 html,
@@ -13,7 +14,14 @@ body {
   height: 100vh;
 }
 
+
+button {
+  padding: 8px 10px 8px 10px;
+  font-size: var(--standard-font-size);
+}
+
 @font-face {
+  font-size: var(--standard-font-size);
   font-family: FixedsysExcelsior301Regular;
   src: url(./fixedsys-excelsior.woff2) format("woff2");
   -webkit-font-smoothing: none;
@@ -25,13 +33,65 @@ html, body, button, input {
   font-family: FixedsysExcelsior301Regular;
 }
 
+.toolbar {
+  width: calc(100% - 20px);
+  padding: 10px;
+  border-bottom: 1px solid black;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.dice-tray {
+  width: 100%;
+  text-align: center;
+  padding: 40px 0 40px 0;
+}
+
+.dice-slots-wrap {
+  width: 100%;
+}
+
+.dice-slots {
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome-image {
+  float: right;
+  height: 150px;
+  margin-left: 10px;
+  border: 2px inset black;
+}
+
+.dice-helper,
+.dice-helper-text,
+.dice-helper-text-big {
+  display: inline-block;
+  vertical-align: middle;
+}
+.dice-helper {
+  font-family: monospace;
+  font-size: 50px;
+}
+.dice-helper-text-big {
+  font-size: 24px;
+}
+
 .dice-dropzone {
   display: inline-block;
-  border: 3px inset #777777;
-  border-radius: 10px;
   width: calc(var(--dice-size) * 2.25);
   height: calc(var(--dice-size) + (calc(var(--dice-size)/2)));
+  padding-bottom: 5px;
   text-align: center;
+  vertical-align: middle;
+  border: 3px inset #777777;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.dropzone-pad {
+  margin-right: 20px;
 }
 
 .dice-dropzone label {

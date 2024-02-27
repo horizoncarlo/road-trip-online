@@ -20,101 +20,150 @@
   </head>
 
   <body>
-    <div x-data="{ resources: resources }">
-      Fuel: <span x-text="resources.fuel"></span>
-      Fun: <span x-text="resources.fun"></span>
-      Distance: <span x-text="resources.distance"></span>
-      Memories: <span x-text="resources.memories"></span>
-    </div>
-    
-    <div x-data="{ turnState: turnState }">
-      <!-- TODO Can't ever roll all - game does first roll for you, then after scoring re-rolls all, so can remove: <button onclick="rollAllDice()" :disabled="turnState.step !== 1">Roll All</button> -->
-      <button onclick="rerollSelected()" :disabled="turnState.step === 1">
-        <template x-if="turnState.usingRestStop">
-          <span>Reroll Rest Stop</span>
-        </template>
-        <template x-if="!turnState.usingRestStop">
-          <span>
-            <span x-show="turnState.step > 2">Reroll for 2 Memories</span>
-            <span x-show="turnState.step <= 2">Reroll Selected</span>
-          </span>
-        </template>
-      </button>
-      <!-- Technically COULD disable the +1/-1 buttons if we don't have enough Memories, but that can be confusing when learning the rules -->
-      <button onclick="modifySelected(1)" :disabled="turnState.step === 1">+1 Selected</button>
-      <button onclick="modifySelected(-1)" :disabled="turnState.step === 1">-1 Selected</button>
+    <div class="toolbar">
+      <!-- TODO Better styling - little gas tank that fills up, bigger smiling face, etc. Plus animations on change -->
+      <div x-data="{ resources: resources }" style="flex: 1;">
+        Fuel: <span x-text="resources.fuel"></span>
+        Fun: <span x-text="resources.fun"></span>
+        Distance: <span x-text="resources.distance"></span>
+        Memories: <span x-text="resources.memories"></span>
+      </div>
+      
+      <div style="flex: 1;" x-data="{ turnState: turnState }">
       <button onclick="tryToEndTurn()" :disabled="turnState.step < 3 || turnState.allocatedDice < DICE_COUNT">End Turn</button>
-    </div>
-    
-    <template x-data="{ loop: allDice }" x-for="(diceObj) in loop">
-    <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
-         x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
-         class="dice-wrapper">
-      <div x-bind:id="'hover' + diceObj.diceIndex" class="allow-hover">
-        <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
-          <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
-          <div class="dice-face dice-face-2"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-          <div class="dice-face dice-face-3"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
-          <div class="dice-face dice-face-4">
-            <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-            <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-          </div>
-          <div class="dice-face dice-face-5">
-            <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-            <div class="column"><span class="dice-pip"></span></div>
-            <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
-          </div>
-          <div class="dice-face dice-face-6">
-            <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
-            <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
-          </div>
-        </div>
+      </div>
+      <div style="justify-content: end;">
+      <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }">New Game</button>
+      <button onclick="openInstructionDialog()">How to Play</button>
       </div>
     </div>
-    </template>
     
-    <br/>
-    
-    <div id="traffic" x-data="{ label: labelObj.traffic }" class="dice-dropzone" dice-allowed="2">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚁</span>
-    </div>
-    <div id="hunger" x-data="{ label: labelObj.hunger }" class="dice-dropzone" dice-allowed="3">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚂</span>
-    </div>
-    <div id="music" x-data="{ label: labelObj.music }" class="dice-dropzone" dice-allowed="5">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚄</span>
-    </div>
-    <br/>
-    <div id="restStop" x-data="{ label: labelObj.restStop }" class="dice-dropzone" dice-allowed="4">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚃</span>
-    </div>
-    <br/>
-    <div id="lost" x-data="{ label: labelObj.lost }" class="dice-dropzone" dice-allowed="1">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚀</span>
-    </div>
-    <div id="scenicDetour" x-data="{ label: labelObj.scenicDetour }" class="dice-dropzone" dice-allowed="6">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚅</span>
-    </div>
-    <br/>
-    <div id="route" x-data="{ label: labelObj.route }" class="dice-dropzone" dice-allowed="1">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚀</span>
-    </div>
-    <div id="travel" x-data="{ label: labelObj.travel }" class="dice-dropzone" dice-allowed="6">
-      <label x-text="label"></label>
-      <span class="dice-socket">⚅</span>
+    <div class="page-content">
+      <div class="dice-tray">
+        <template x-data="{ loop: allDice }" x-for="(diceObj) in loop">
+          <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
+              x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
+              class="dice-wrapper">
+            <div x-bind:id="'hover' + diceObj.diceIndex" class="allow-hover">
+              <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
+                <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
+                <div class="dice-face dice-face-2"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                <div class="dice-face dice-face-3"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                <div class="dice-face dice-face-4">
+                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                </div>
+                <div class="dice-face dice-face-5">
+                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  <div class="column"><span class="dice-pip"></span></div>
+                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                </div>
+                <div class="dice-face dice-face-6">
+                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                  <div class="column"><span class="dice-pip"></span><span class="dice-pip"></span><span class="dice-pip"></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+        <div x-data="{ turnState: turnState }">
+          <br/>
+          <button onclick="rerollSelected()" :disabled="turnState.step === 1">
+            <template x-if="turnState.usingRestStop">
+              <span><u>R</u>eroll (free Rest Stop)</span>
+            </template>
+            <template x-if="!turnState.usingRestStop">
+              <span>
+                <span x-show="turnState.step > 2"><u>R</u>eroll for 2 Memories</span>
+                <span x-show="turnState.step <= 2"><u>R</u>eroll Selected</span>
+              </span>
+            </template>
+          </button>
+          <!-- Technically COULD disable the +1/-1 buttons if we don't have enough Memories, but that can be confusing when learning the rules -->
+          <button onclick="modifySelected(1)" :disabled="turnState.step === 1">+1</button>
+          <button onclick="modifySelected(-1)" :disabled="turnState.step === 1">-1</button>
+        </div>
+      </div>
+      
+      <!-- TODO Do a score changelog on the right side of the page? Shows fuel/fun/etc. modifiers after you press End turn. Ideally UI is clear enough to see what happened. Maybe leaves a +/-X below the resource bar until the next turn -->
+      <!-- TODO Better styling -->
+      <div class="page-instructions" x-data="{ show: true }" style="float: left; width: 300px;">
+        <div @click="show = !show">&gt; Instructions</div>
+        <div x-show="show">
+          <ul>
+            <li>Roll 5 six-sided dice</li>
+            <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
+            <li>Must place any Route + Travel combinations to gain Distance</li>
+            <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
+            <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
+          </ul>
+          <button onclick="toggleInlineHelp()">Toggle Help</button>
+        </div>
+      </div>
+      
+      <div class="dice-slots-wrap">
+        <div class="dice-slots">
+          <div id="traffic" x-data="{ label: labelObj.traffic }" class="dice-dropzone" dice-allowed="2">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚁</span>
+          </div><span class="dice-helper">+</span><div id="hunger" x-data="{ label: labelObj.hunger }" class="dice-dropzone" dice-allowed="3">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚂</span>
+          </div><span class="dice-helper">-</span><div id="music" x-data="{ label: labelObj.music }" class="dice-dropzone" dice-allowed="5">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚄</span>
+          </div><span class="dice-helper">=</span><span class="dice-helper-text-big">&nbsp;Fun lost</span>
+          <br/>
+          <div id="restStop" x-data="{ label: labelObj.restStop }" class="dice-dropzone" dice-allowed="4">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚃</span>
+          </div><span class="dice-helper">&nbsp;</span><div class="dice-helper-text">
+            <ul>
+              <li>Can reroll for free</li>
+              <li>Get +1 Fuel if gaining Distance this turn</li>
+              <li>Otherwise -1 Fuel if no Distance this turn</li>
+            </ul>
+          </div>
+          <br/>
+          <div id="lost" x-data="{ label: labelObj.lost }" class="dice-dropzone" dice-allowed="1">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚀</span>
+          </div><span class="dice-helper">&nbsp;</span><div id="scenicDetour" x-data="{ label: labelObj.scenicDetour }" class="dice-dropzone" dice-allowed="6">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚅</span>
+          </div><div class="dice-helper-text">
+            <ul>
+              <li>Lost: -2 Fuel or Fun</li>
+              <li>Scenic Detour: +1 Fun</li>
+          </div>
+          <br/>
+          <div id="route" x-data="{ label: labelObj.route }" class="dice-dropzone" dice-allowed="1">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚀</span>
+          </div><span class="dice-helper">+</span><div id="travel" x-data="{ label: labelObj.travel }" class="dice-dropzone" dice-allowed="6">
+            <label x-text="label"></label>
+            <span class="dice-socket">⚅</span>
+          </div><span class="dice-helper">=</span><span class="dice-helper-text-big">&nbsp;+1 Distance</span>
+        </div>
+      </div>
     </div>
     
     <div id="dialog-lost" title="How to use Lost?">
       You have Lost dice, which each give -2 to Fuel <i>or</i> Fun.
       <br/><br/>
       How do you want to apply Lost?
+    </div>
+    
+    <div id="dialog-instruction" title="How to Play">
+      <img src="welcome-image.webp" class="welcome-image"/>
+      Welcome to <b>Road Trip!</b><br/>The dice game about trying to travel to your destination while managing the fun (and fuel) of the trip.
+      <p><a href="https://horizongamesblog.files.wordpress.com/2022/12/road-trip_solo-dice-game-v1.pdf" target="_blank">Read the full rules here (PDF)</a></p>
+      <p>You win if your Distance is 6 or higher.<br/>You lose if your Fuel or Fun is 0 or lower.</p>
+      <p>Each turn you roll 5 dice.<br/>You <i>must</i> reroll once - which can be a single dice or any number of dice (as long as they are the same number). You can always reroll any Rest Stop ⚃ for free.</p>
+      <p>You <i>can</i> spend 2 Memories to reroll again or modify a dice by +1/-1, as many times as you want if you have Memories to spend.</p>
+      <p>Gain +1 Memory (up to a maximum of 6) for every pair of dice in a slot at the end of the turn.</p>
+      <p>Then drag-and-drop the dice onto their matching slots. Note that if possible you have to place Route ⚀ + Travel ⚅ to get Distance if possible.</p>
+      <p>When done, press End Turn to see how your resources changed, then start a new turn and keep driving.</p>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js"></script>

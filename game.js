@@ -3,6 +3,19 @@
 const DICE_COUNT = 5;
 const ROLL_ANIMATION_MS = 100;
 const TWIRL_MIN = 3; const TWIRL_RAND = 7; // How many times to twirl the dice before actually rolling them
+const DEFAULT_DIALOG_OPTS = {
+  autoOpen: false,
+  modal: true,
+  resizable: false,
+  draggable: false,
+  height: 'auto',
+  width: 400,
+}
+// TODO Do some more storage - current game state is saved to prevent losing data on refresh? Save eventual customization options too. Save Inline Help toggle state
+const LS_NAMES = { // Hardcoded names for local storage keys
+  shownMobileNote: 'shownMobileNote',
+  shownInstructions: 'shownInstructions'
+};
 const labelObj = {
   traffic: 'Traffic ⚁',
   hunger: 'Hunger ⚂',
@@ -54,6 +67,8 @@ After scoring go back to Step 1
 let turnState = { step: 1, usingRestStop: false, allocatedDice: 0 };
 let allDice = []; // Array of our Dice objects
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
+let instructionDialog;
+let showInlineHelp = true;
 let lostUsageDialog;
 let lostEffectsFun = false; // If true any Lost dice will apply to Fun, otherwise on false to Fuel
 let scoreCounter = {};
@@ -65,12 +80,36 @@ function init() {
   // TODO Likely store state like score and current dice in session/local storage via Alpine.persist plugin, to not restart the game on refresh
   resources = applyStartingResources(); // Initialize our default resources
   
-  // Setup our dialog for asking the user how to apply Lost dice
-  setupLostUsageDialog();
-  
   // Populate our initial dice array
   for (let diceIndex = 0; diceIndex < DICE_COUNT; diceIndex++) {
     allDice.push(new Dice(diceIndex, 1));
+  }
+  
+  // Setup our dialogs
+  setupInstructionDialog();
+  setupLostUsageDialog();
+  
+  // Add a hotkey listener
+  window.addEventListener('keyup', (event) => {
+    if (event) {
+      if (event.key === 'r' || event.key === 'R') {
+        rerollSelected();
+      }
+      else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
+      else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
+      else if (event.key === '3') { toggleDiceSelection(allDice[2]); }
+      else if (event.key === '4') { toggleDiceSelection(allDice[3]); }
+      else if (event.key === '5') { toggleDiceSelection(allDice[4]); }
+      else if (event.key === '6') { toggleDiceSelection(allDice[5]); }
+    }
+  });
+  
+  // Note for mobile users that there's no testing there so the app is probably jank. Primarily because the idea of dragging dice on squished mobile screen is unappealing
+  if (!getLocalStorageBoolean(LS_NAMES.shownMobileNote)) {
+    if (window.matchMedia("(max-width: 850px)").matches) {
+      alert("Road Trip! is best played in a desktop browser.\nThere has been almost no testing on mobile devices.");
+      setLocalStorageItem(LS_NAMES.shownMobileNote, true);
+    }
   }
   
   document.addEventListener('alpine:initialized', () => {
@@ -123,10 +162,7 @@ function init() {
       });
       // Add the click after draggable so that dragging doesn't fire click
       currentDice.wrapperEle.click(function() {
-        // Ignore selection if we're rolling
-        if (!currentDice.isRolling) {
-          toggleDiceSelection(currentDice);
-        }
+        toggleDiceSelection(currentDice);
       });
     });
     
@@ -143,8 +179,15 @@ function init() {
       }
     });
     
-    // Start up the game
-    startTurn();
+    // Show our instructions dialog if we haven't on load before
+    if (!getLocalStorageBoolean(LS_NAMES.shownInstructions)) {
+      openInstructionDialog();
+      setLocalStorageItem(LS_NAMES.shownInstructions, true);
+    }
+    else {
+      // Start up the game
+      startTurn();
+    }
   });
 }
 
@@ -203,7 +246,7 @@ function tryToEndTurn() {
   
   // Check for validation cases before continuing
   if (invalidDice.length > 0) { // Dice in the wrong slot
-    let message = 'Dice are in the wrong spot:<ul>';
+    let message = 'Dice are in the wrong slot:<ul>';
     invalidDice.forEach(dice => {
       message += '<li>' + dice.label + ' has value ' + dice.value + ' instead of ' + dice.allowed + '</li>';
     })
@@ -287,6 +330,11 @@ function applyScore(scoreCounter) {
   if (resources.fun > 6) { resources.fun = 6; }
 }
 
+function restartGame() {
+  applyStartingResources();
+  startTurn();
+}
+
 function startTurn() {
   turnState.step = 1;
   rollAllDice();
@@ -300,26 +348,27 @@ function endTurn(scoreCounter) {
   // Check if we won or lost and start a new turn
   Alpine.nextTick(() => {
     setTimeout(() => { // TODO Need to wait an extra setTimeout because we're temporarily using an alert() which blocks the page from processing changes
-      let restartGame = false;
+      let gameOver = false;
       // TODO Better way to notify of loss/victory, with a prompt to play again, etc.
       if (resources.fuel <= 0) {
         alert("You lose! Ran out of Fuel :(");
-        restartGame = true;
+        gameOver = true;
       }
       if (resources.fun <= 0) {
         alert("You lose! Ran out of Fun :(");
-        restartGame = true;
+        gameOver = true;
       }
       if (resources.distance >= 6) {
         alert("You won and reached your destination!"); // TODO Could be fun to randomize destinations, and show a little car with a progress bar at the top of the page for Distance
-        restartGame = true;
+        gameOver = true;
       }
       
-      if (restartGame) {
-        applyStartingResources();
+      if (gameOver) {
+        restartGame();
       }
-      
-      startTurn();
+      else {
+        startTurn();
+      }
     }, 100);
   }); // Let the page render updates (primarily our resources count) before checking
 }
@@ -342,14 +391,10 @@ function safeNum(val) {
 }
 
 function setupLostUsageDialog() {
+  // TODO Replace jQuery UI dialogs with native/custom rolled, and remove jQuery UI CSS
   // TODO Let the user choose where EACH Lost dice applies, via radio buttons in the dialog. Submit buttons would be "Confirm", "All Fun", "All Fuel"
   lostUsageDialog = $('#dialog-lost').dialog({
-    autoOpen: false,
-    modal: true,
-    resizable: false,
-    draggable: false,
-    height: 'auto',
-    width: 400,
+    ...DEFAULT_DIALOG_OPTS,
     buttons: {
       'Fuel': function() {
         $(this).dialog('close');
@@ -376,6 +421,25 @@ function askForLostUsage() {
   lostUsageDialog.dialog('open');
 }
 
+function setupInstructionDialog() {
+  instructionDialog = $('#dialog-instruction').dialog({
+    ...DEFAULT_DIALOG_OPTS,
+    width: 800,
+    buttons: {
+      "Let's Play": function() {
+        $(this).dialog('close');
+        Alpine.nextTick(() => {
+          startTurn();
+        });
+      },
+    }
+  });
+}
+
+function openInstructionDialog() {
+  instructionDialog.dialog('open');
+}
+
 function rollAllDice() {
   turnState.step++;
   
@@ -388,7 +452,10 @@ function rollAllDice() {
 }
 
 function toggleDiceSelection(diceObj) {
-  diceObj.isSelected = !diceObj.isSelected;
+  // Ignore selection if we're rolling
+  if (!diceObj.isRolling) {
+    diceObj.isSelected = !diceObj.isSelected;
+  }
 }
 
 function getSelectedDice() {
@@ -421,7 +488,7 @@ function rerollSelected() {
   
   // If we're JUST rerolling Rest Stops, then it's free and doesn't advance our steps
   if (!turnState.usingRestStop) {
-    // If this is our first re-roll we can just do it for free
+    // If this is our first reroll we can just do it for free
     if (turnState.step === 2) {
       turnState.step++;
     }
@@ -432,7 +499,7 @@ function rerollSelected() {
         return;
       }
       
-      // We can re-roll at a Memories cost
+      // We can reroll at a Memories cost
       changeMemories(-2);
     }
   }
@@ -545,6 +612,39 @@ function markInvalidDice(diceObj) {
 function markValidDice(diceObj) {
   // Clear any validation border if we're valid
   diceObj.wrapperEle.css('box-shadow', '');
+}
+
+function toggleInlineHelp() {
+  showInlineHelp = !showInlineHelp;
+  // TODO Clean this up
+  if (showInlineHelp) {
+    $('.dice-helper').show();
+    $('.dice-helper-text').show();
+    $('.dice-helper-text-big').show();
+  }
+  else {
+    $('.dice-helper').hide();
+    $('.dice-helper-text').hide();
+    $('.dice-helper-text-big').hide();
+  }
+  $('.dice-dropzone').toggleClass('dropzone-pad');
+}
+
+function getLocalStorageItem(key) {
+  return window.localStorage.getItem(key);
+}
+
+function getLocalStorageBoolean(key) {
+  const fromStorage = window.localStorage.getItem(key);
+  return fromStorage && fromStorage === 'true' ? true : false;
+}
+
+function setLocalStorageItem(key, value) {
+  window.localStorage.setItem(key, value);
+}
+
+function removeLocalStorageItem(key) {
+  window.localStorage.removeItem(key);
 }
 
 function randomRange(min, randomCount) {
