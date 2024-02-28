@@ -1,11 +1,11 @@
 # TODO
 - BUG in Firefox rendering, dice is white if moused over while rolling - fine if wiggle-dice anim is removed
 
-##### Timed Mode 
+##### Timed Mode
 - * Do a timed mode, and show at the end of a win/loss (think this will be the most interesting addition compared to the tabletop version)
-
-##### Backgrounds
-- More variety of background pictures, plus randomly selecting them
+- Could actually re-theme as a racing game, maybe choose at the start before launching
+  - Different wallpapers and different terminoloy (Fun = Tires, Memories = Skill, Rest Stop = Pit Stop, etc.)
+  - Could do goofy stuff like "you got in a crash" where the dice are scattered around the screen so they're harder to handle
 
 ##### Footer
 - Show an animated little car driving as a pseudo-progress bar along the bottom of the page with a pixel road
@@ -13,29 +13,19 @@
   - Could be fun to randomize destinations (pull a list of cities in a country?)
   - Then put the city label at the end of the road (and on victory/loss screen)
 
-##### Dialogs
-- Replace jQuery UI dialogs with native/custom rolled, and remove jQuery UI CSS
-- Do dialog width better, should be vw instead of %/px, with a max-width of px
-- Make sure the dialogs are at a high enough z-index to not overlap any dragged dice
-- Currently pressing Cancel on the initial How to Play dialog leaves the game in a bugged state as the game is never started
-- Don't restart the turn/game on subsequent openings/acceptance of the How to Play dialog, just the initial load
-
-##### Lost Dice improvement
-- Let the user choose where EACH Lost dice applies, via radio buttons in the dialog. Submit buttons would be "Confirm", "All Fun", "All Fuel"
-  - Also need to confirm if they will lose when choosing a certain option
-
 ##### Local Storage
-- Do some more local storage - current game state is saved to prevent losing data on refresh? Save eventual customization options too
-- Customize:
+- Save game state to prevent losing data on refresh?
+- Save eventual customization options too:
   - dice color (face, pip)
   - sort dice after roll or not
-  - number of twirls (aka fast mode to have none)
-- Rain and snow effects (from Fishing Day) as a random/configurable option?
+  - number of twirls (aka fast mode to have none - can't turn off in a timed match, and timed matches have a set number of twirls)
+  - background image or not
+  - rain and snow effects (from Fishing Day), random chance by default, but configurable too
 
 #### Minor / daydream
 - Snap draggable into dice placement slot
-- Would be amazing to leverage the 3D even more and have visibly stacked dice in the same slot
 - If someone loses on the first turn have an extra explanation of thematically what happens
+- Would be amazing to leverage the 3D even more and have visibly stacked dice in the same slot
 
 #### Mobile
 - Mobile MIGHT be okay, if we can debug why draggable doesn't work. jQuery handling of touch events?

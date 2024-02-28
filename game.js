@@ -3,17 +3,11 @@
 const DICE_COUNT = 5;
 const ROLL_ANIMATION_MS = 100;
 const TWIRL_MIN = 3; const TWIRL_RAND = 7; // How many times to twirl the dice before actually rolling them
-const DEFAULT_DIALOG_OPTS = {
-  autoOpen: false,
-  modal: true,
-  resizable: false,
-  draggable: false,
-  height: 'auto',
-  width: 400,
-}
 const LS_NAMES = { // Hardcoded names for local storage keys
   shownMobileNote: 'shownMobileNote',
   shownInstructions: 'shownInstructions',
+  showLeft: 'showLeft',
+  showRight: 'showRight',
   inlineHelp: 'showInlineHelp',
 };
 const labelObj = {
@@ -69,43 +63,36 @@ let turnState = { count: 0, step: 1, usingRestStop: false, allocatedDice: 0 };
 let allDice = []; // Array of our Dice objects
 let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
-let instructionDialog;
-let showInlineHelp = getLocalStorageBoolean(LS_NAMES.inlineHelp, true);
-let lostUsageDialog;
-let lostEffectsFun = false; // If true any Lost dice will apply to Fun, otherwise on false to Fuel
+let showState = {
+  inlineHelp: getLocalStorageBoolean(LS_NAMES.inlineHelp, true),
+  instructionPanel: getLocalStorageBoolean(LS_NAMES.showLeft, true),
+  travelPanel: getLocalStorageBoolean(LS_NAMES.showRight, true),
+};
+let lostDialogState = {
+  count: 0, // Count of lost dice, pulled from scoreCounter.lost before showing the dialog
+  choices: { /* Format is diceNumber: 'fun/fuel' */ },
+};
 let scoreCounter = {};
 let resources; // Track our Fuel/Fun/Distance/Memories
 
 init();
 
 function init() {
-  resources = applyStartingResources(); // Initialize our default resources
   applyInlineHelp();
+  resources = applyStartingResources(); // Initialize our default resources
   
   // Populate our initial dice array
   for (let diceIndex = 0; diceIndex < DICE_COUNT; diceIndex++) {
     allDice.push(new Dice(diceIndex, 1));
   }
   
-  // Setup our dialogs
-  setupInstructionDialog();
-  setupLostUsageDialog();
-  
   // Add a listener for hotkeys
   window.addEventListener('keyup', (event) => {
     if (event) {
-      if (event.key === 'r' || event.key === 'R') {
-        rerollSelected();
-      }
-      else if (event.key === 'e' || event.key === 'E') {
-        tryToEndTurn();
-      }
-      else if (event.key === 'd' || event.key === 'D') {
-        randomizeDiceColors();
-      }
-      else if (event.key === 'h' || event.key === 'H') {
-        toggleInlineHelp();
-      }
+      if (event.key === 'r' || event.key === 'R') { rerollSelected(); }
+      else if (event.key === 'e' || event.key === 'E') { tryToEndTurn(); }
+      else if (event.key === 'd' || event.key === 'D') { randomizeDiceColors(); }
+      else if (event.key === 'h' || event.key === 'H') { toggleInlineHelp(); }
       else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
       else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
       else if (event.key === '3') { toggleDiceSelection(allDice[2]); }
@@ -129,6 +116,8 @@ function init() {
     allDice = Alpine.reactive(allDice);
     travelLog = Alpine.reactive(travelLog);
     turnState = Alpine.reactive(turnState);
+    showState = Alpine.reactive(showState);
+    lostDialogState = Alpine.reactive(lostDialogState);
     resources = Alpine.reactive(resources);
     
     // Effect listeners when the reactive state changes
@@ -203,7 +192,7 @@ function init() {
     
     // Show our instructions dialog if we haven't on load before
     if (!getLocalStorageBoolean(LS_NAMES.shownInstructions)) {
-      openInstructionDialog();
+      showInstructionDialog();
       setLocalStorageItem(LS_NAMES.shownInstructions, true);
     }
     else {
@@ -300,16 +289,17 @@ function tryToEndTurn() {
   
   // Right before we apply our score, check what the user wants to do with any Lost
   if (safeNum(scoreCounter.lost) > 0) {
+    lostDialogState.count = scoreCounter.lost;
     // Note the dialog will do our score application once done
-    askForLostUsage();
+    showLostDialog();
   }
   else {
     // Otherwise if we made it this far all our dice are setup and valid, so we can apply our score!
-    endTurn(scoreCounter);
+    endTurn();
   }
 }
 
-function applyScore(scoreCounter) {
+function applyScore() {
   // We just total all our modifications based on each slot, and apply them
   let fuelChange = 0;
   let funChange = 0;
@@ -334,11 +324,17 @@ function applyScore(scoreCounter) {
   funChange += safeNum(scoreCounter.scenicDetour);
   
   // Calculate our Fuel/Fun effect from Lost, depending on what type the user wanted to apply to
-  if (lostEffectsFun) {
-    funChange += safeNum(scoreCounter.lost) * -2;
-  }
-  else {
-    fuelChange += safeNum(scoreCounter.lost) * -2;
+  if (safeNum(scoreCounter.lost) > 0) {
+    for (let choice in lostDialogState.choices) {
+      if (lostDialogState.choices.hasOwnProperty(choice)) {
+        if (lostDialogState.choices[choice] === 'fun') {
+          funChange -= 2;
+        }
+        if (lostDialogState.choices[choice] === 'fuel') {
+          fuelChange -= 2;
+        }
+      }
+    }
   }
   
   // Calculate how many pairs we got to increase Memories
@@ -381,9 +377,9 @@ function startTurn() {
   rollAllDice();
 }
 
-function endTurn(scoreCounter) {
+function endTurn() {
   // Apply and reset our score for the turn
-  applyScore(scoreCounter);
+  applyScore();
   scoreCounter = {};
   
   // Check if we won or lost and start a new turn
@@ -417,8 +413,8 @@ function endTurn(scoreCounter) {
 
 function applyStartingResources() {
   // Bit of a hack, but we want to maintain the Alpine.js reactivity
-  // Which re-assigning resources to a new {} seems to stop
-  // So instead if we have existing resources, use those instead, aka restarting the game later
+  //  Which re-assigning resources to a new {} seems to stop
+  //  So instead if we have existing resources, use those instead, aka restarting the game later
   const toReturn = resources ? resources : {};
   toReturn.fuel = 3;
   toReturn.fun = 3;
@@ -432,52 +428,46 @@ function safeNum(val) {
   return typeof val === 'number' ? val : 0;
 }
 
-function setupLostUsageDialog() {
-  lostUsageDialog = $('#dialog-lost').dialog({
-    ...DEFAULT_DIALOG_OPTS,
-    buttons: {
-      'Fuel': function() {
-        $(this).dialog('close');
-        Alpine.nextTick(() => { // Make sure the dialog is closed before processing
-          lostEffectsFun = false;
-          endTurn(scoreCounter);
-        });
-      },
-      'Fun': function() {
-        $(this).dialog('close');
-        Alpine.nextTick(() => {
-          lostEffectsFun = true;
-          endTurn(scoreCounter);
-        });
-      },
-      Cancel: function() {
-        $(this).dialog('close');
-      }
+function changeLostChoice(index, val) {
+  lostDialogState.choices[index] = val;
+}
+
+function submitLostDialog(allFun) {
+  if (typeof allFun === 'boolean') { // All to Fun or Fuel, otherwise just use our .choices directly
+    for (let i = 0; i < lostDialogState.count; i++) {
+      changeLostChoice(i, allFun ? 'fun' : 'fuel');
     }
-  });
+  }
+  
+  closeLostDialog();
+  Alpine.nextTick(() => endTurn());
 }
 
-function askForLostUsage() {
-  lostUsageDialog.dialog('open');
+function showLostDialog() {
+  // Has to be a better way, but for the initial implementation we manually reset our radio buttons
+  for (let i = 1; i <= lostDialogState.count; i++) {
+    try{
+      document.getElementById('radioFun' + i).checked = false;
+      document.getElementById('radioFuel' + i).checked = false;
+    }catch (silent) { /* If we can't find the elements not a big deal, they might not be initialized yet */ }
+  }
+  
+  document.getElementById('lostDialog').showModal();
 }
 
-function setupInstructionDialog() {
-  instructionDialog = $('#dialog-instruction').dialog({
-    ...DEFAULT_DIALOG_OPTS,
-    width: 800,
-    buttons: {
-      "Let's Play": function() {
-        $(this).dialog('close');
-        Alpine.nextTick(() => {
-          restartGame();
-        });
-      },
-    }
-  });
+function closeLostDialog() {
+  document.getElementById('lostDialog').close();
 }
 
-function openInstructionDialog() {
-  instructionDialog.dialog('open');
+function showInstructionDialog() {
+  document.getElementById('playDialog').showModal();
+}
+
+function submitInstructionDialog() {
+  if (!getLocalStorageBoolean(LS_NAMES.shownInstructions)) {
+    restartGame();
+  }
+  document.getElementById('playDialog').close(); 
 }
 
 function rollAllDice() {
@@ -516,7 +506,9 @@ function deselectAllDice() {
 }
 
 function setAllDiceUnallocated() {
-  allDice.forEach(currentDice => currentDice.isAllocated = false);
+  allDice.forEach(currentDice => {
+    currentDice.isAllocated = false;
+  });
 }
 
 function rerollSelected() {
@@ -666,16 +658,26 @@ function markValidDice(diceObj) {
 }
 
 function toggleInlineHelp() {
-  showInlineHelp = !showInlineHelp;
-  setLocalStorageItem(LS_NAMES.inlineHelp, showInlineHelp);
+  showState.inlineHelp = !showState.inlineHelp;
+  setLocalStorageItem(LS_NAMES.inlineHelp, showState.inlineHelp);
   applyInlineHelp();
 }
 
+function toggleInstructions() {
+  showState.instructionPanel = !showState.instructionPanel;
+  setLocalStorageItem(LS_NAMES.showLeft, showState.instructionPanel);
+}
+
+function toggleTravelLog() {
+  showState.travelPanel = !showState.travelPanel;
+  setLocalStorageItem(LS_NAMES.showRight, showState.travelPanel);
+}
+
 function applyInlineHelp() {
-  $('.dice-helper').toggle(showInlineHelp);
-  $('.dice-helper-text').toggle(showInlineHelp);
-  $('.dice-helper-text-big').toggle(showInlineHelp);
-  $('.dice-dropzone').toggleClass('dropzone-pad', !showInlineHelp);
+  $('.dice-helper').toggle(showState.inlineHelp);
+  $('.dice-helper-text').toggle(showState.inlineHelp);
+  $('.dice-helper-text-big').toggle(showState.inlineHelp);
+  $('.dice-dropzone').toggleClass('dropzone-pad', !showState.inlineHelp);
 }
 
 function getLocalStorageItem(key) {
@@ -727,7 +729,7 @@ function logEvent(event) {
   travelLog.push(event);
   
   // Scroll to the bottom of the log
-  const scrollEle = document.getElementById('travel-log-scroll');
+  const scrollEle = document.getElementById('travelLogScroll');
   if (scrollEle) {
     Alpine.nextTick(() => scrollEle.scrollTo(0, scrollEle.scrollHeight));
   }
@@ -750,3 +752,52 @@ function randomRange(min, randomCount) {
 function D6() {
   return randomRange(1, 6);
 }
+
+const BACKGROUND_IMAGES = [
+  'background-01.jpg',
+  'background-02.jpg',
+  'background-03.jpg',
+  'background-04.jpg',
+  'background-05.jpg',
+  'background-06.jpg',
+  'background-07.jpg',
+  'background-08.jpg',
+  'background-09.jpg',
+  'background-10.jpg',
+  'background-11.jpg',
+  'background-12.jpg',
+  'background-13.jpg',
+  'background-14.jpg',
+  'background-15.jpg',
+  'background-16.jpg',
+  'background-17.jpg',
+  'background-18.jpg',
+  'background-19.jpg',
+  'background-20.jpg',
+  'background-21.jpg',
+  'background-22.jpg',
+  'background-23.jpg',
+  'background-24.jpg',
+  'background-25.jpg',
+  'background-26.jpg',
+  'background-27.jpg',
+  'background-28.jpg',
+  'background-29.jpg',
+  'background-30.jpg',
+  'background-31.jpg',
+  'background-32.jpg',
+  'background-33.jpg',
+  'background-34.jpg',
+  'background-35.jpg',
+  'background-36.jpg',
+  'background-37.jpg',
+  'background-38.jpg',
+  'background-39.jpg',
+  'background-40.jpg',
+  'background-41.jpg',
+];
+function applyBackgroundImage() {
+  const selected = BACKGROUND_IMAGES[randomRange(0, BACKGROUND_IMAGES.length)];
+  document.body.style.backgroundImage = "url('./backgrounds/" + selected + "')";
+}
+applyBackgroundImage(); // Run the background configuration immediately
