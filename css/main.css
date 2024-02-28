@@ -60,6 +60,7 @@ dialog,
 }
 dialog,
 .panel,
+.timer,
 .dice-slots {
   box-shadow: 5px 5px 10px var(--basic-gray);
 }
@@ -67,7 +68,8 @@ dialog,
   background-color: rgba(255, 255, 255, 0.7);
   z-index: 1000;
 }
-.panel {
+.panel,
+.timer {
   background-color: rgba(255, 255, 255, 0.8);
 }
 .dice-slots {
@@ -158,6 +160,14 @@ html, body, button, input {
   margin-bottom: 5px;
   margin-left: auto;
   margin-right: auto;
+}
+
+.timer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  border-top-right-radius: 5px;
+  padding: 10px;
 }
 
 .page-instructions {

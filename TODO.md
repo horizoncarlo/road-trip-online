@@ -1,12 +1,6 @@
 # TODO
 - BUG in Firefox rendering, dice is white if moused over while rolling - fine if wiggle-dice anim is removed
 
-##### Timed Mode
-- * Do a timed mode, and show at the end of a win/loss (think this will be the most interesting addition compared to the tabletop version)
-- Could actually re-theme as a racing game, maybe choose at the start before launching
-  - Different wallpapers and different terminoloy (Fun = Tires, Memories = Skill, Rest Stop = Pit Stop, etc.)
-  - Could do goofy stuff like "you got in a crash" where the dice are scattered around the screen so they're harder to handle
-
 ##### Footer
 - Show an animated little car driving as a pseudo-progress bar along the bottom of the page with a pixel road
   - Example cars: https://www.flaticon.com/free-animated-icons/car
@@ -16,6 +10,7 @@
 
 ##### Local Storage
 - Save game state to prevent losing data on refresh?
+- Save a history of runs? Or personal best time?
 - Save eventual customization options too:
   - dice color (face, pip)
   - sort dice after roll or not
@@ -24,9 +19,14 @@
   - rain and snow effects (from Fishing Day), random chance by default, but configurable too
 
 #### Minor / daydream
+- Try wrapping in Electron or Tauri
 - Snap draggable into dice placement slot
-- If someone loses on the first turn have an extra explanation of thematically what happens
+- If someone loses on the first turn have an extra explanation of thematically what happens?
 - Would be amazing to leverage the 3D even more and have visibly stacked dice in the same slot
+- Could also theme as a racing game, let the player choose roadtrip vs race at the start before launching
+  - Different wallpapers and different terminoloy (Fun = Tires, Memories = Skill, Rest Stop = Pit Stop, etc.)
+  - Could do goofy stuff like "you got in a crash" where the dice are scattered around the corners of the screen so they're harder to handle
+  - Could have each Distance be a "lap", and you do a set number in a race, and it tracks your time for each lap and whether you finished. Since more likely to lose when rushing
 
 #### Mobile
 - Mobile MIGHT be okay, if we can debug why draggable doesn't work. jQuery handling of touch events?

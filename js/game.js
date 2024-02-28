@@ -60,18 +60,23 @@ const rand = new MersenneTwister();
 After scoring go back to Step 1
 */
 let turnState = { count: 0, step: 1, usingRestStop: false, allocatedDice: 0 };
-let allDice = []; // Array of our Dice objects
-let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
-let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
-let showState = {
+let showState = { // Track which panels/elements are shown on the page
   inlineHelp: getLocalStorageBoolean(LS_NAMES.inlineHelp, true),
   instructionPanel: getLocalStorageBoolean(LS_NAMES.showLeft, true),
   travelPanel: getLocalStorageBoolean(LS_NAMES.showRight, true),
 };
 let lostDialogState = {
-  count: 0, // Count of lost dice, pulled from scoreCounter.lost before showing the dialog
+  count: 0, // Count of dice in the Lost slot, pulled from scoreCounter.lost before showing the dialog
   choices: { /* Format is diceNumber: 'fun/fuel' */ },
 };
+let timerState = { // Track our start/end (in milliseconds) to show the player their speed
+  start: 0,
+  end: 0,
+  current: 0
+};
+let allDice = []; // Array of our Dice objects
+let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
+let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
 let destination = "The Grand Canyon";
 let scoreCounter = {};
 let resources; // Track our Fuel/Fun/Distance/Memories
@@ -119,6 +124,7 @@ function init() {
     turnState = Alpine.reactive(turnState);
     showState = Alpine.reactive(showState);
     lostDialogState = Alpine.reactive(lostDialogState);
+    timerState = Alpine.reactive(timerState);
     resources = Alpine.reactive(resources);
     
     // Effect listeners when the reactive state changes
@@ -345,6 +351,13 @@ function applyScore() {
     }
   }
   
+  function resourcePrefix(change) {
+    if (typeof change === 'number' && change > 0) {
+      return "+";
+    }
+    return "";
+  }
+  
   // Log what's going on this turn
   if (fuelChange !== 0) { logEvent(resourcePrefix(fuelChange) + fuelChange + " Fuel"); }
   if (funChange !== 0) { logEvent(resourcePrefix(funChange) + funChange + " Fun"); }
@@ -363,6 +376,24 @@ function applyScore() {
   if (resources.fun > 6) { resources.fun = 6; }
 }
 
+function startTimer() {
+  timerState.start = performance.now();
+  timerState.current = performance.now();
+  
+  timerState.interval = setInterval(() => {
+    timerState.current = performance.now();
+  }, 450);
+}
+
+function endTimer() {
+  timerState.end = performance.now();
+  
+  if (timerState.interval) {
+    clearInterval(timerState.interval);
+  }
+  timerState.current = 0;
+}
+
 function restartGame() {
   let timeout = hasEndOverlay() ? 750 : 0;
   closeEndOverlay();
@@ -376,6 +407,7 @@ function restartGame() {
     turnState.count = 0;
     randomizeDiceColors();
     applyStartingResources();
+    startTimer();
     startTurn();
   }, timeout);
 }
@@ -410,6 +442,7 @@ function endTurn() {
     }
     
     if (gameOver) {
+      endTimer(); // Stop tracking our time
       showEndOverlay();
     }
     else {
@@ -478,7 +511,7 @@ function submitInstructionDialog() {
 }
 
 function hasEndOverlay() {
-  return $('#endOverlay').css('display') === 'block';
+  return document.getElementById('endOverlay').style.display === 'block';
 }
 
 function showEndOverlay() {
@@ -733,13 +766,6 @@ function randomizeDiceColors() {
   document.body.style.setProperty('--dice-pipcolor-2', randomColor());
 }
 
-function resourcePrefix(change) {
-  if (typeof change === 'number' && change > 0) {
-    return "+";
-  }
-  return "";
-}
-
 function getDiceAllowed(dropzoneObj) {
   if (dropzoneObj) {
     const potentialValue = dropzoneObj.attr('dice-allowed');
@@ -758,6 +784,23 @@ function logEvent(event) {
   if (scrollEle) {
     Alpine.nextTick(() => scrollEle.scrollTo(0, scrollEle.scrollHeight));
   }
+}
+
+function msToTime(toFormat, showMs) {
+  hideMs = false;
+  
+  function pad(val) {
+    return val > 10 ? val : ('0' + val);
+  }
+  
+  const ms = toFormat % 1000;
+  toFormat = (toFormat - ms) / 1000;
+  const secs = toFormat % 60;
+  toFormat = (toFormat - secs) / 60;
+  const mins = toFormat % 60;
+  
+  // Output Minutes only if found, otherwise Seconds, and Milliseconds if asked with showMs
+  return `${mins > 0 ? (pad(mins) + 'm:') : ''}${pad(secs)}s${showMs ? ('.' + ms) : ''}`;
 }
 
 function randomColor() {

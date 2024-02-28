@@ -67,7 +67,7 @@
         <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }" title="Discard your current drive and start a new one">New Game</button>
         <button onclick="showInstructionDialog()"><span style="color: cornflowerblue;">?</span> How to Play</button>
       </div>
-    </div>
+    </div> <!-- end of toolbar -->
     
     <div class="page-content">
       <div class="dice-tray-wrap">
@@ -99,7 +99,7 @@
             </div>
           </template>
         </div>
-      </div>
+      </div> <!-- end of dice tray -->
       
       <div class="page-instructions panel" x-data="{ showState: showState }">
         <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
@@ -175,7 +175,11 @@
             <span class="dice-socket">⚅</span>
           </div><span class="dice-helper">=</span><span class="dice-helper-text-big">&nbsp;+1 Distance</span>
         </div>
-      </div>
+      </div> <!-- end of dice slots-->
+    </div> <!-- end of page content -->
+    
+    <div class="timer" x-data="{ timerState: timerState }">
+      🕘 <span x-text="msToTime(timerState.current - timerState.start)"></span>
     </div>
     
     <dialog id="playDialog">
@@ -234,7 +238,7 @@
       </template>
     </dialog>
     
-    <div id="endOverlay" class="end-overlay" x-data="{ resources: resources, turnState: turnState }">
+    <div id="endOverlay" class="end-overlay" x-data="{ resources: resources, turnState: turnState, timerState: timerState }">
       <div class="content">
         <template x-if="resources.fuel <= 0 || resources.fun <= 0">
           <div>
@@ -263,7 +267,7 @@
           </div>
         </template>
         <br/>
-        <button onclick="restartGame()" class="details">Restart</button>
+        <button onclick="restartGame()" class="details">Start Another Trip</button>
         <br/><br/>
         <span class="details">
           <span x-text="resources.fuel"></span> Fuel <span class="unicon">⛽</span>
@@ -275,6 +279,8 @@
           <span x-text="resources.distance"></span> Distance <span class="unicon">🛣</span>
           <br/>
           <span x-text="turnState.count"></span> Turns <span class="unicon">🕰</span>
+          <br/>
+          <span x-text="msToTime(timerState.end - timerState.start, true)"></span> Duration <span class="unicon">🕘</span>
         </span>
       </div>
     </div>
