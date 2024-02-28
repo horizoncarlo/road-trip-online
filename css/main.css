@@ -9,6 +9,7 @@
   --dice-pip-color-2: #333333;
   --basic-gray: #333333;
   --light-gray: #DEDEDE;
+  --fallback-background-color: #000033;
   --standard-font-size: 16px;
   --toolbar-height: 40px;
 }
@@ -31,7 +32,9 @@ html {
 }
 
 body {
-  background-color: #000033;
+  overflow-y: auto;
+  overflow-x: auto;
+  background-color: var(--fallback-background-color);
   background-attachment: fixed;
   background-position: bottom;
   background-repeat: repeat;
@@ -80,7 +83,7 @@ button {
 @font-face {
   font-size: var(--standard-font-size);
   font-family: FixedsysExcelsior301Regular;
-  src: url(./fixedsys-excelsior.woff2) format("woff2");
+  src: url(../fonts/fixedsys-excelsior.woff2) format("woff2");
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: none;
   font-smooth: never;
@@ -212,6 +215,56 @@ html, body, button, input {
 .lost-radio-wrap label {
   cursor: pointer;
   font-size: 1.25em;
+}
+
+.end-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: auto;
+  overflow-y: auto;
+  z-index: 10000;
+  cursor: default;
+  display: none;
+  opacity: 0;
+  transition: opacity 1s;
+  transition-timing-function: linear;
+  color: white;
+  text-shadow: 2px 2px 5px black;
+  text-align: center;
+  background: linear-gradient(180deg, var(--fallback-background-color) 0%, black 100%);
+}
+
+.end-overlay img {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  max-width: 40%;
+  border: 1px solid black;
+  border-radius: 5px;
+}
+
+.end-overlay .content {
+  width: 60%;
+  padding-left: 40%;
+}
+
+.end-overlay .header {
+  font-size: 150px;
+}
+
+.end-overlay .header2 {
+  font-size: 64px;
+}
+
+.end-overlay .details {
+  font-size: 32px;
+}
+
+.end-overlay .unicon {
+  font-size: 18px;
 }
 
 .resource-wrap {

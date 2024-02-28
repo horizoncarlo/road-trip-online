@@ -5,7 +5,7 @@
     <title>Road Trip!</title>
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>"/>
-    <link rel="stylesheet" type="text/css" href="./main.css"/>
+    <link rel="stylesheet" type="text/css" href="./css/main.css"/>
     
     <!-- Bring in Alpine.js -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js"></script>
@@ -24,11 +24,15 @@
         <div class="resource-wrap">
           <div class="resource-bar">
             <span class="resource-bar-text">Fuel ⛽<br/><span x-text="resources.fuel"></span>/6</span>
-            <div class="resource-bar-color resource-fuel" :style="'width: ' + (resources.fuel/6*100) + '%;'"></div>
+            <template x-if="resources.fuel > 0">
+              <div class="resource-bar-color resource-fuel" :style="'width: ' + (resources.fuel/6*100) + '%;'"></div>
+            </template>
           </div>
           <div class="resource-bar">
             <span class="resource-bar-text">Fun 😎<br/><span x-text="resources.fun"></span>/6</span>
-            <div class="resource-bar-color resource-fun" :style="'width: ' + (resources.fun/6*100) + '%;'"></div>
+            <template x-if="resources.fun > 0">
+              <div class="resource-bar-color resource-fun" :style="'width: ' + (resources.fun/6*100) + '%;'"></div>
+            </template>
           </div>
           <div class="resource-bar">
             <span class="resource-bar-text">Memories 📚<br/><span x-text="resources.memories"></span>/6</span>
@@ -175,7 +179,7 @@
     </div>
     
     <dialog id="playDialog">
-      <img src="./welcome-image.webp" class="welcome-image"/>
+      <img src="./images/welcome-image.webp" class="welcome-image"/>
       Welcome to <b>Road Trip!</b><br/>
       <p>A dice game about trying to travel to your destination while managing the fun (and fuel) of the trip.</p>
       <p>You win if your Distance is 6 or higher.<br/>You lose if your Fuel or Fun is 0 or lower.</p>
@@ -217,20 +221,65 @@
       <br/>
       <template x-if="lostDialogState.count === 1">
         <div>
-          <button onclick="submitLostDialog(true)">😎 To Fun</button>
-          <button onclick="submitLostDialog(false)">⛽ To Fuel</button>
+          <button onclick="submitLostDialog(true)">-2 Fun 😎</button>
+          <button onclick="submitLostDialog(false)">-2 Fuel ⛽</button>
         </div>
       </template>
       <template x-if="lostDialogState.count !== 1">
         <div>
           <button onclick="submitLostDialog()">✓ Submit Choices</button>
-          <button onclick="submitLostDialog(true)">😎 All Fun</button>
-          <button onclick="submitLostDialog(false)">⛽ All Fuel</button>
+          <button onclick="submitLostDialog(true)">-<span x-text="lostDialogState.count * 2"></span> Fun 😎</button>
+          <button onclick="submitLostDialog(false)">-<span x-text="lostDialogState.count * 2"></span> Fuel ⛽</button>
         </div>
       </template>
     </dialog>
     
+    <div id="endOverlay" class="end-overlay" x-data="{ resources: resources, turnState: turnState }">
+      <div class="content">
+        <template x-if="resources.fuel <= 0 || resources.fun <= 0">
+          <div>
+            <template x-if="resources.fuel <= 0">
+              <img src="./images/out-of-fuel.png" />
+            </template>
+            <template x-if="resources.fun <= 0">
+              <img src="./images/out-of-fun.png" />
+            </template>
+            
+            <span class="header">You Lose!</span>
+            
+            <template x-if="resources.fuel <= 0">
+              <span class="header2"><br/>Ran out of Fuel</span>
+            </template>
+            <template x-if="resources.fun <= 0">
+              <span class="header2"><br/>Ran out of Fun</span>
+            </template>
+          </div>
+        </template>
+        <template x-if="resources.fuel > 0 && resources.fun > 0 && resources.distance >= 6">
+          <div>
+            <img src="./images/you-win.webp" />
+            <span class="header">You Win!</span>
+            <span class="header2"><br/>You reached <span x-text="destination"></span>
+          </div>
+        </template>
+        <br/>
+        <button onclick="restartGame()" class="details">Restart</button>
+        <br/><br/>
+        <span class="details">
+          <span x-text="resources.fuel"></span> Fuel <span class="unicon">⛽</span>
+          <br/>
+          <span x-text="resources.fun"></span> Fun <span class="unicon">😎</span>
+          <br/>
+          <span x-text="resources.memories"></span> Memories <span class="unicon">📚</span>
+          <br/>
+          <span x-text="resources.distance"></span> Distance <span class="unicon">🛣</span>
+          <br/>
+          <span x-text="turnState.count"></span> Turns <span class="unicon">🕰</span>
+        </span>
+      </div>
+    </div>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js"></script>
-    <script src="./game.js"></script>
+    <script src="./js/game.js"></script>
   </body>
 </html>

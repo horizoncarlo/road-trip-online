@@ -72,6 +72,7 @@ let lostDialogState = {
   count: 0, // Count of lost dice, pulled from scoreCounter.lost before showing the dialog
   choices: { /* Format is diceNumber: 'fun/fuel' */ },
 };
+let destination = "The Grand Canyon";
 let scoreCounter = {};
 let resources; // Track our Fuel/Fun/Distance/Memories
 
@@ -88,7 +89,7 @@ function init() {
   
   // Add a listener for hotkeys
   window.addEventListener('keyup', (event) => {
-    if (event) {
+    if (event && !hasEndOverlay()) {
       if (event.key === 'r' || event.key === 'R') { rerollSelected(); }
       else if (event.key === 'e' || event.key === 'E') { tryToEndTurn(); }
       else if (event.key === 'd' || event.key === 'D') { randomizeDiceColors(); }
@@ -363,11 +364,20 @@ function applyScore() {
 }
 
 function restartGame() {
-  logEvent("New game started!");
-  turnState.count = 0;
-  randomizeDiceColors();
-  applyStartingResources();
-  startTurn();
+  let timeout = hasEndOverlay() ? 750 : 0;
+  closeEndOverlay();
+  
+  // Reset our scroll position
+  document.body.scrollTop = document.documentElement.scrollTop = 0;
+  
+  // Start the new game after a slight delay to let the overlay close
+  setTimeout(() => {
+    logEvent("🌄 New game started!");
+    turnState.count = 0;
+    randomizeDiceColors();
+    applyStartingResources();
+    startTurn();
+  }, timeout);
 }
 
 function startTurn() {
@@ -387,23 +397,20 @@ function endTurn() {
     let gameOver = false;
     if (resources.fuel <= 0) {
       logEvent("You lose! Ran out of Fuel");
-      alert("You lose! Ran out of Fuel :(");
       gameOver = true;
     }
     else if (resources.fun <= 0) {
       logEvent("You lose! Ran out of Fun");
-      alert("You lose! Ran out of Fun :(");
       gameOver = true;
     }
     else if (resources.distance >= 6) {
       logEvent("You won the game!");
-      logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories);
-      alert("You won and reached your destination!");
+      logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories + ", Turns=" + turnState.count);
       gameOver = true;
     }
     
     if (gameOver) {
-      restartGame();
+      showEndOverlay();
     }
     else {
       startTurn();
@@ -468,6 +475,24 @@ function submitInstructionDialog() {
     restartGame();
   }
   document.getElementById('playDialog').close(); 
+}
+
+function hasEndOverlay() {
+  return $('#endOverlay').css('display') === 'block';
+}
+
+function showEndOverlay() {
+  const overlay = $('#endOverlay');
+  overlay.css('display', 'block');
+  Alpine.nextTick(() => overlay.css('opacity', '1'));
+}
+
+function closeEndOverlay() {
+  const overlay = $('#endOverlay');
+  overlay.css('opacity', '0');
+  setTimeout(() => {
+    overlay.css('display', 'none');
+  }, 1000);
 }
 
 function rollAllDice() {
