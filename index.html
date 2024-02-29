@@ -101,16 +101,43 @@
         </div>
       </div> <!-- end of dice tray -->
       
-      <div class="page-instructions panel" x-data="{ showState: showState }">
+      <div class="page-instructions panel" x-data="{ settings: settings }">
         <div class="panel-header" onclick="toggleOptions()">&gt; Options</div>
-        <div x-show="showState.optionsPanel" class="panel-content">
+        <div x-show="settings.optionsPanel" class="panel-content">
           <div class="panel-buttons">
-            <button onclick="toggleInlineHelp()" style="cursor: help;">❔ Inline <u>H</u>elp</button>
-            <button onclick="randomizeDiceColors()">🎲 <u>D</u>ice Colors</button>
+            <button onclick="randomizeDiceColors()" title="Arguably the TRUE game - randomize your dice face and pip colors">🎲 Change <u>D</u>ice Colors</button>
+            <div class="switch-wrap" onclick="toggleInlineHelp()" title="Show help and tips on dice use and resources info within the slot panel">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.inlineHelp"></input>
+                <span class="slider round"></span>
+              </span>
+              Inline <u>H</u>elp
+            </div>
+            <div class="switch-wrap" onclick="toggleFastMode()" title="Ignore all my beautiful animations and resolve the dice almost instantly">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.fastMode"></input>
+                <span class="slider round"></span>
+              </span>
+              Fast Roll
+            </div>
+            <div class="switch-wrap" onclick="toggleBackgroundImage()" title="Use pictures of my road trips as the background">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.backgroundImage"></input>
+                <span class="slider round"></span>
+              </span>
+              Background Image
+            </div>
+            <div class="switch-wrap" onclick="toggleSnow()" title="Delicately falling flakes...or not">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.snow"></input>
+                <span class="slider round"></span>
+              </span>
+              Snowing
+            </div>
           </div>
         </div>
         <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
-        <div x-show="showState.instructionPanel" class="panel-content">
+        <div x-show="settings.instructionPanel" class="panel-content">
           <ul>
             <li>Roll 5 six-sided dice</li>
             <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
@@ -118,17 +145,23 @@
             <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
             <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
             <br/>
-            <b>Tips:</b><br/>
-            <li>Can press <u>1-5</u> to select dice, <u>R</u> to reroll, +/- to modify, and <u>E</u> to End Turn</li>
-            <li>Hold the <i>Shift</i> key while clicking a dice to select all matching faces</li>
+            <b>Hotkeys:</b><br/>
+            <li>
+              <u>R</u> to reroll<br/>
+              <u>E</u> to End Turn<br/>
+              <u>D</u> to change dice color<br/>
+              <u>1-5</u> to select dice<br/>
+              +/- to modify<br/>
+            </li>
+            <li>Hold the <i>Shift</i> key while selecting a dice to get all matching faces</li>
           </ul>
           <br/>
         </div>
       </div>
       
-      <div class="travel-log panel" x-data="{ showState: showState }">
+      <div class="travel-log panel" x-data="{ settings: settings }">
         <div class="panel-header" onclick="toggleTravelLog()">&gt; Travel Log</div>
-        <div id="travelLogScroll" class="panel-content" x-show="showState.travelPanel" x-data="{ log: travelLog }">
+        <div id="travelLogScroll" class="panel-content" x-show="settings.travelPanel" x-data="{ log: travelLog }">
           <template x-for="entry in log">
             <span x-text="entry"></span>
           </template>
@@ -198,7 +231,7 @@
       <p>Gain +1 Memory (up to a maximum of 6) for every pair of dice in a slot at the end of the turn.</p>
       <p>When done, press End Turn to see how your resources changed, then start a new turn and keep driving.</p>
       <p><a href="https://horizongamesblog.files.wordpress.com/2022/12/road-trip_solo-dice-game-v1.pdf" target="_blank">Read the full rules here (PDF)</a> - or can print them out and play in real life!</p>
-      <button onclick="submitInstructionDialog()">🚗 Let's Play 🚗</button>
+      <button onclick="closeInstructionDialog()">🚗 Let's Play 🚗</button>
     </dialog>
     
     <dialog id="lostDialog" x-data="{ lostDialogState: lostDialogState, resources: resources }">
@@ -280,7 +313,7 @@
           <br/>
           <span x-text="resources.distance"></span> Distance <span class="unicon">🛣</span>
           <br/>
-          <span x-text="turnState.count"></span> Turns <span class="unicon">🕰</span>
+          <span x-text="turnState.count"></span> Turns <span class="unicon">⌛</span>
           <br/>
           <span x-text="msToTime(timerState.end - timerState.start, true)"></span> Duration <span class="unicon">🕘</span>
         </div>

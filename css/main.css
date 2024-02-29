@@ -8,8 +8,9 @@
   --dice-pip-color-1: white;
   --dice-pip-color-2: #333333;
   --basic-gray: #333333;
-  --soft-green: rgba(0, 100, 120, 0.3);
-  --soft-green-solid: rgba(0, 100, 120, 1);
+  --primary-color: rgba(0, 100, 120, 1);
+  --primary-color-soft: rgba(0, 100, 120, 0.3);
+  --primary-color-faded: rgba(0, 100, 120, 0.1);
   --fallback-background-color: #000033;
   --standard-font-size: 16px;
   --toolbar-height: 40px;
@@ -84,7 +85,7 @@ button {
 }
 
 button:hover {
-  box-shadow: 0 0 15px inset var(--soft-green-solid);
+  box-shadow: 0 0 15px inset var(--primary-color);
 }
 
 @font-face {
@@ -131,6 +132,11 @@ html, body, button, input {
   height: 40px;
 }
 
+.mod-button {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
 .panel {
   position: absolute;
   top: calc(var(--toolbar-height) + 20px + 20px); /* 20 for toolbar padding, 20 to space from it */
@@ -138,12 +144,16 @@ html, body, button, input {
 }
 
 .panel-header {
-  background-color: var(--soft-green);
+  background-color: var(--primary-color-soft);
   padding: 10px;
   font-size: 18px;
   border-radius: 5px 5px 0 0;
-  cursor: pointer;
+  cursor: row-resize;
   margin-bottom: 5px;
+}
+
+.panel-header:hover {
+  filter: brightness(1.5);
 }
 
 .panel-content {
@@ -176,8 +186,8 @@ html, body, button, input {
 .timer {
   position: fixed;
   bottom: 0;
-  left: 0;
-  border-top-right-radius: 5px;
+  right: 0;
+  border-top-left-radius: 5px;
   padding: 10px;
 }
 
@@ -204,6 +214,7 @@ html, body, button, input {
 }
 
 .dice-tray {
+  max-width: 50%;
   display: inline-block;
   vertical-align: middle;
 }
@@ -512,3 +523,65 @@ html, body, button, input {
 
 /* Snow weather effect */
 .snowflake{color:#fff;font-size:1em;font-family:Arial;text-shadow:0 0 1px #000}@-webkit-keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@-webkit-keyframes snowflakes-shake{0%{-webkit-transform:translateX(0);transform:translateX(0)}50%{-webkit-transform:translateX(80px);transform:translateX(80px)}100%{-webkit-transform:translateX(0);transform:translateX(0)}}@keyframes snowflakes-fall{0%{top:-10%}100%{top:100%}}@keyframes snowflakes-shake{0%{transform:translateX(0)}50%{transform:translateX(80px)}100%{transform:translateX(0)}}.snowflake{position:fixed;top:-10%;z-index:500;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:default;-webkit-animation-name:snowflakes-fall,snowflakes-shake;-webkit-animation-duration:10s,3s;-webkit-animation-timing-function:linear,ease-in-out;-webkit-animation-iteration-count:infinite,infinite;-webkit-animation-play-state:running,running;animation-name:snowflakes-fall,snowflakes-shake;animation-duration:10s,3s;animation-timing-function:linear,ease-in-out;animation-iteration-count:infinite,infinite;animation-play-state:running,running}.snowflake:nth-of-type(0){left:1%;-webkit-animation-delay:0s,0s;animation-delay:0s,0s}.snowflake:nth-of-type(1){left:10%;-webkit-animation-delay:1s,1s;animation-delay:1s,1s}.snowflake:nth-of-type(2){left:20%;-webkit-animation-delay:6s,.5s;animation-delay:6s,.5s}.snowflake:nth-of-type(3){left:30%;-webkit-animation-delay:4s,2s;animation-delay:4s,2s}.snowflake:nth-of-type(4){left:40%;-webkit-animation-delay:2s,2s;animation-delay:2s,2s}.snowflake:nth-of-type(5){left:50%;-webkit-animation-delay:8s,3s;animation-delay:8s,3s}.snowflake:nth-of-type(6){left:60%;-webkit-animation-delay:6s,2s;animation-delay:6s,2s}.snowflake:nth-of-type(7){left:70%;-webkit-animation-delay:2.5s,1s;animation-delay:2.5s,1s}.snowflake:nth-of-type(8){left:80%;-webkit-animation-delay:1s,0s;animation-delay:1s,0s}.snowflake:nth-of-type(9){left:90%;-webkit-animation-delay:3s,1.5s;animation-delay:3s,1.5s}
+
+/* Switch Toggle component from old timey w3schools of all places */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+}
+
+.switch, .switch-wrap {
+  height: 34px;
+  line-height: 34px;
+}
+
+.switch input[type='checkbox'] {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-wrap {
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1px solid var(--primary-color);
+  background-color: var(--primary-color-faded);
+  transition: 400ms;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 400ms;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}

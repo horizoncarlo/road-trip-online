@@ -1,6 +1,6 @@
 /* Oh hey, good luck on your Road Trip! */
 
-const DICE_COUNT = 5;
+const DICE_COUNT = 5; // This is fun to increase
 const ROLL_ANIMATION_MS = 100;
 const TWIRL_MIN = 3; const TWIRL_RAND = 7; // How many times to twirl the dice before actually rolling them
 const LS_NAMES = { // Hardcoded names for local storage keys
@@ -10,6 +10,9 @@ const LS_NAMES = { // Hardcoded names for local storage keys
   showOptionsPanel: 'showOptionsPanel',
   showTravelLog: 'showTravelLog',
   showInlineHelp: 'showInlineHelp',
+  showSnow: 'showSnow',
+  useFastMode: 'useFastMode',
+  useBackgroundImage: 'useBackgroundImage',
 };
 const labelObj = {
   traffic: 'Traffic ⚁',
@@ -61,11 +64,14 @@ const rand = new MersenneTwister();
 After scoring go back to Step 1
 */
 let turnState = { count: 0, step: 1, usingRestStop: false, allocatedDice: 0 };
-let showState = { // Track which panels/elements are shown on the page
+let settings = { // Track which panels/elements are shown on the page
   inlineHelp: getLocalStorageBoolean(LS_NAMES.showInlineHelp, true),
   instructionPanel: getLocalStorageBoolean(LS_NAMES.showInstructionPanel, true),
   optionsPanel: getLocalStorageBoolean(LS_NAMES.showOptionsPanel, true),
   travelPanel: getLocalStorageBoolean(LS_NAMES.showTravelLog, true),
+  snow: getLocalStorageBoolean(LS_NAMES.showSnow, false),
+  fastMode: getLocalStorageBoolean(LS_NAMES.useFastMode, false),
+  backgroundImage: getLocalStorageBoolean(LS_NAMES.useBackgroundImage, true),
 };
 let lostDialogState = {
   count: 0, // Count of dice in the Lost slot, pulled from scoreCounter.lost before showing the dialog
@@ -86,9 +92,7 @@ let resources; // Track our Fuel/Fun/Distance/Memories
 init();
 
 function init() {
-  if (Math.random() <= 0.4) {
-    initSnow();
-  }
+  applySnow();
   applyInlineHelp();
   resources = applyStartingResources(); // Initialize our default resources
   
@@ -112,6 +116,12 @@ function init() {
       else if (event.key === '4') { toggleDiceSelection(allDice[3]); }
       else if (event.key === '5') { toggleDiceSelection(allDice[4]); }
       else if (event.key === '6') { toggleDiceSelection(allDice[5]); }
+      else if (event.key === '!') { toggleDiceSelection(allDice[0], true); }
+      else if (event.key === '@') { toggleDiceSelection(allDice[1], true); }
+      else if (event.key === '#') { toggleDiceSelection(allDice[2], true); }
+      else if (event.key === '$') { toggleDiceSelection(allDice[3], true); }
+      else if (event.key === '%') { toggleDiceSelection(allDice[4], true); }
+      else if (event.key === '^') { toggleDiceSelection(allDice[5], true); }
     }
   });
   
@@ -129,7 +139,7 @@ function init() {
     allDice = Alpine.reactive(allDice);
     travelLog = Alpine.reactive(travelLog);
     turnState = Alpine.reactive(turnState);
-    showState = Alpine.reactive(showState);
+    settings = Alpine.reactive(settings);
     lostDialogState = Alpine.reactive(lostDialogState);
     timerState = Alpine.reactive(timerState);
     resources = Alpine.reactive(resources);
@@ -143,14 +153,6 @@ function init() {
       // Maintain the allocatedDice count
       turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
     });
-    /* TODO If sorting after rolling is desired. Note this fires on re-rolls too, which is confusing, so likely need a flag or to leverage turnState.step
-    Alpine.effect(() => {
-      if (allDice.filter(currentDice => currentDice.isRolling).length === 0) {
-        allDice.sort((a, b) => a.value > b.value);
-        allDice.forEach((currentDice, index) => currentDice.diceIndex = index);
-      }
-    });
-    */
     
     allDice.forEach(currentDice => {
       // Now that our array is rendered we can assign our elements to the allDice
@@ -507,14 +509,21 @@ function closeLostDialog() {
 }
 
 function showInstructionDialog() {
-  document.getElementById('playDialog').showModal();
+  // An old ranger trick to remove event listeners by cloning the node
+  const oldPlayDialog = document.getElementById('playDialog');
+  const newPlayDialog = oldPlayDialog.cloneNode(true);
+  oldPlayDialog.parentNode.replaceChild(newPlayDialog, oldPlayDialog);
+  newPlayDialog.addEventListener('close', (event) => {
+    // First time displaying the dialog, so start the game
+    if (turnState.count === 0) {
+      restartGame();
+    }
+  });
+  newPlayDialog.showModal();
 }
 
-function submitInstructionDialog() {
-  if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedIntro)) {
-    restartGame();
-  }
-  document.getElementById('playDialog').close(); 
+function closeInstructionDialog() {
+  document.getElementById('playDialog').close();
 }
 
 function hasEndOverlay() {
@@ -657,7 +666,10 @@ function processDice(diceObj) {
   diceObj.hoverEle.removeClass('allow-hover');
   markValidDice(diceObj);
   
-  const maxSpins = randomRange(TWIRL_MIN, TWIRL_RAND);
+  let maxSpins = randomRange(TWIRL_MIN, TWIRL_RAND);
+  if (settings.fastMode) {
+    maxSpins = 1;
+  }
   for (let i = 0; i <= maxSpins; i++) {
     setTimeout(() => {
       this.twirlDice(diceObj, i === maxSpins);
@@ -723,31 +735,67 @@ function markValidDice(diceObj) {
 }
 
 function toggleInlineHelp() {
-  showState.inlineHelp = !showState.inlineHelp;
-  setLocalStorageItem(LS_NAMES.showInlineHelp, showState.inlineHelp);
+  settings.inlineHelp = !settings.inlineHelp;
+  setLocalStorageItem(LS_NAMES.showInlineHelp, settings.inlineHelp);
   applyInlineHelp();
 }
 
 function toggleInstructions() {
-  showState.instructionPanel = !showState.instructionPanel;
-  setLocalStorageItem(LS_NAMES.showInstructionPanel, showState.instructionPanel);
+  settings.instructionPanel = !settings.instructionPanel;
+  setLocalStorageItem(LS_NAMES.showInstructionPanel, settings.instructionPanel);
 }
 
 function toggleOptions() {
-  showState.optionsPanel = !showState.optionsPanel;
-  setLocalStorageItem(LS_NAMES.showOptionsPanel, showState.optionsPanel);
+  settings.optionsPanel = !settings.optionsPanel;
+  setLocalStorageItem(LS_NAMES.showOptionsPanel, settings.optionsPanel);
 }
 
 function toggleTravelLog() {
-  showState.travelPanel = !showState.travelPanel;
-  setLocalStorageItem(LS_NAMES.showTravelLog, showState.travelPanel);
+  settings.travelPanel = !settings.travelPanel;
+  setLocalStorageItem(LS_NAMES.showTravelLog, settings.travelPanel);
+}
+
+function toggleFastMode() {
+  settings.fastMode = !settings.fastMode;
+  setLocalStorageItem(LS_NAMES.useFastMode, settings.fastMode);
+}
+
+function toggleBackgroundImage() {
+  settings.backgroundImage = !settings.backgroundImage;
+  setLocalStorageItem(LS_NAMES.useBackgroundImage, settings.backgroundImage);
+  applyBackgroundImage();
+}
+
+function toggleSnow() {
+  settings.snow = !settings.snow;
+  setLocalStorageItem(LS_NAMES.showSnow, settings.snow);
+  applySnow();
 }
 
 function applyInlineHelp() {
-  $('.dice-helper').toggle(showState.inlineHelp);
-  $('.dice-helper-text').toggle(showState.inlineHelp);
-  $('.dice-helper-text-big').toggle(showState.inlineHelp);
-  $('.dice-dropzone').toggleClass('dropzone-pad', !showState.inlineHelp);
+  $('.dice-helper').toggle(settings.inlineHelp);
+  $('.dice-helper-text').toggle(settings.inlineHelp);
+  $('.dice-helper-text-big').toggle(settings.inlineHelp);
+  $('.dice-dropzone').toggleClass('dropzone-pad', !settings.inlineHelp);
+}
+
+function applySnow() {
+  // Just for fun force snow in December
+  if (!settings.snow && (new Date().getMonth() === 11)) {
+    // Notify only if the user tries to change after initialization
+    if (typeof Alpine === 'object') {
+      notify.success('Festive spirit is mandatory');
+    }
+    toggleSnow();
+    return;
+  }
+  
+  if (settings.snow) {
+    initSnow();
+  }
+  else {
+    removeSnow();
+  }
 }
 
 function getLocalStorageItem(key) {
@@ -802,7 +850,7 @@ function msToTime(toFormat, showMs) {
   hideMs = false;
   
   function pad(val) {
-    return val > 10 ? val : ('0' + val);
+    return val >= 10 ? val : ('0' + val);
   }
   
   const ms = toFormat % 1000;
@@ -905,7 +953,14 @@ const BACKGROUND_IMAGES = [
   'background-41.jpg',
 ];
 function applyBackgroundImage() {
-  const selected = BACKGROUND_IMAGES[randomRange(0, BACKGROUND_IMAGES.length)];
-  document.body.style.backgroundImage = "url('./backgrounds/" + selected + "')";
+  if (settings.backgroundImage) {
+    const selected = BACKGROUND_IMAGES[randomRange(0, BACKGROUND_IMAGES.length)];
+    document.body.style.backgroundImage = "url('./backgrounds/" + selected + "')";
+  }
+  else {
+    document.body.style.backgroundImage = '';
+  }
 }
-applyBackgroundImage(); // Run the background configuration immediately
+// Initialize all the way down here instead of in init() because we want to store the lengthy BACKGROUND_IMAGES array at the bottom for readability
+// Somewhat undone by having this super long comment
+applyBackgroundImage();
