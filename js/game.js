@@ -154,6 +154,15 @@ function init() {
       turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
     });
     
+    $('.footer-car').draggable({
+      containment: '.dice-slots-wrap',
+      delay: 125,
+      axis: 'y'
+    });
+    $('.footer-car').click(function(clickEvent) {
+      clickFooterCar();
+    });
+    
     allDice.forEach(currentDice => {
       // Now that our array is rendered we can assign our elements to the allDice
       currentDice.wrapperEle = $('#wrapper' + currentDice.diceIndex);
@@ -216,6 +225,10 @@ function init() {
       restartGame();
     }
   });
+}
+
+function isAlpineReady() {
+  return typeof Alpine === 'object';
 }
 
 function resetDicePositions() {
@@ -376,7 +389,7 @@ function applyScore() {
   // Finally modify our resources by the changes
   resources.fuel += fuelChange;
   resources.fun += funChange;
-  resources.distance += distanceChange;
+  changeDistance(distanceChange);
   changeMemories(memoryChange);
   
   // Check for maximum Fuel and Fun
@@ -409,6 +422,11 @@ function restartGame() {
   
   // Reset our scroll position
   document.body.scrollTop = document.documentElement.scrollTop = 0;
+  
+  // 60% of the time, it hue shifts every time
+  if (Math.random() >= 0.4) {
+    document.getElementById('footerCar').style.filter = 'hue-rotate(' + randomRange(0, 360) + 'deg)';
+  }
   
   // Start the new game after a slight delay to let the overlay close
   setTimeout(() => {
@@ -446,12 +464,13 @@ function endTurn() {
     }
     else if (resources.distance >= 6) {
       logEvent("You won the game!");
-      logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories + ", Turns=" + turnState.count);
+      logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories);
       gameOver = true;
     }
     
     if (gameOver) {
       endTimer(); // Stop tracking our time
+      logEvent("Duration: " + formatTimer(true));
       showEndOverlay();
     }
     else {
@@ -469,6 +488,7 @@ function applyStartingResources() {
   toReturn.fun = 3;
   toReturn.memories = 3;
   toReturn.distance = 0;
+  changeDistance(toReturn.distance, true);
   return toReturn;
 }
 
@@ -724,6 +744,57 @@ function changeMemories(amount) {
   if (resources.memories > 6) { resources.memories = 6; }
 }
 
+function changeDistance(amount, setInstead) {
+  if (!resources) {
+    return;
+  }
+  
+  if (setInstead) {
+    resources.distance = amount;
+  }
+  else {
+    resources.distance += amount;
+  }
+  
+  function speedyFooterCarAnim() {
+    // Temporarily reset our animation to super fast, then back to normal
+    footerCar.style.transition = 'left 500ms';
+    if (isAlpineReady()) {
+      Alpine.nextTick(() => {
+        footerCar.style.transition = 'left 10s';
+      });
+    }
+  }
+  
+  function moveFooterCar() {
+    if (resources.distance > 0) {
+      const footerCar = document.getElementById('footerCar');
+      const totalWidth = document.body.clientWidth;
+      const segmentWidth = totalWidth/6;
+      footerCar.style.left = (resources.distance * segmentWidth) + 'px';
+      
+      if (resources.distance >= 6) {
+        // Hard cap our distance at the very end of the screen, to stop scrollbars
+        footerCar.style.left = (totalWidth - 60) + 'px'; // TODO Don't have hardcoded width of the car here
+        speedyFooterCarAnim();
+      }
+    }
+    else {
+      // Quick reset when resetting to the start
+      footerCar.style.left = '0px';
+      speedyFooterCarAnim();
+    }
+  }
+  
+  moveFooterCar();
+}
+
+function getProgressWidth(resource, max) {
+  let percent = (resource / max * 100);
+  if (percent > 100) { percent = 100; }
+  return 'width: ' + percent + '%;';
+}
+
 function markInvalidDice(diceObj) {
   // An invalid dice means a red border
   diceObj.wrapperEle.css('box-shadow', '0 0 10px inset red'); 
@@ -734,6 +805,7 @@ function markValidDice(diceObj) {
   diceObj.wrapperEle.css('box-shadow', '');
 }
 
+// TODO Cleanup all these toggle* to instead go through a generic function
 function toggleInlineHelp() {
   settings.inlineHelp = !settings.inlineHelp;
   setLocalStorageItem(LS_NAMES.showInlineHelp, settings.inlineHelp);
@@ -783,7 +855,7 @@ function applySnow() {
   // Just for fun force snow in December
   if (!settings.snow && (new Date().getMonth() === 11)) {
     // Notify only if the user tries to change after initialization
-    if (typeof Alpine === 'object') {
+    if (isAlpineReady()) {
       notify.success('Festive spirit is mandatory');
     }
     toggleSnow();
@@ -846,8 +918,10 @@ function logEvent(event) {
   }
 }
 
-function msToTime(toFormat, showMs) {
-  hideMs = false;
+function formatTimer(isEndTimer) {
+  let toFormat = isEndTimer ?
+    timerState.end - timerState.start :
+    timerState.current - timerState.start;
   
   function pad(val) {
     return val >= 10 ? val : ('0' + val);
@@ -860,7 +934,7 @@ function msToTime(toFormat, showMs) {
   const mins = toFormat % 60;
   
   // Output Minutes only if found, otherwise Seconds, and Milliseconds if asked with showMs
-  return `${mins > 0 ? (pad(mins) + 'm:') : ''}${pad(secs)}s${showMs ? ('.' + Math.round(ms)) + 'ms' : ''}`;
+  return `${mins > 0 ? (pad(mins) + 'm:') : ''}${pad(secs)}s${isEndTimer ? ('.' + Math.round(ms)) + 'ms' : ''}`;
 }
 
 function randomColor() {
@@ -906,6 +980,20 @@ function initSnow() {
 function removeSnow() {
   if (document.getElementById('snowflakes')) {
       document.body.removeChild(document.getElementById('snowflakes'));
+  }
+}
+
+function clickFooterCar() {
+  const footerCar = document.getElementById('footerCar');
+  if (footerCar) {
+    // Our first move is a bigger one, to let the user clicking does something
+    if (footerCar.style.left === '0px') {
+      footerCar.style.left = (parseInt(footerCar.style.left)+20) + 'px';
+    }
+    // After that it's painfully, PAINFULLY slow
+    else if (Math.random() > 0.3) {
+      footerCar.style.left = (parseInt(footerCar.style.left)+1) + 'px';
+    }
   }
 }
 

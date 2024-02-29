@@ -25,22 +25,22 @@
           <div class="resource-bar">
             <span class="resource-bar-text">Fuel ⛽<br/><span x-text="resources.fuel"></span>/6</span>
             <template x-if="resources.fuel > 0">
-              <div class="resource-bar-color resource-fuel" :style="'width: ' + (resources.fuel/6*100) + '%;'"></div>
+              <div class="resource-bar-color resource-fuel" :style="getProgressWidth(resources.fuel, 6)"></div>
             </template>
           </div>
           <div class="resource-bar">
             <span class="resource-bar-text">Fun 😎<br/><span x-text="resources.fun"></span>/6</span>
             <template x-if="resources.fun > 0">
-              <div class="resource-bar-color resource-fun" :style="'width: ' + (resources.fun/6*100) + '%;'"></div>
+              <div class="resource-bar-color resource-fun" :style="getProgressWidth(resources.fun, 6)"></div>
             </template>
           </div>
           <div class="resource-bar">
             <span class="resource-bar-text">Memories 📚<br/><span x-text="resources.memories"></span>/6</span>
-            <div class="resource-bar-color resource-memories" :style="'width: ' + (resources.memories/6*100) + '%;'"></div>
+            <div class="resource-bar-color resource-memories" :style="getProgressWidth(resources.memories, 6)"></div>
           </div>
           <div class="resource-bar">
             <span class="resource-bar-text">Distance 🛣<br/><span x-text="resources.distance"></span>/6</span>
-            <div class="resource-bar-color resource-distance" :style="'width: ' + (resources.distance/6*100) + '%;'"></div>
+            <div class="resource-bar-color resource-distance" :style="getProgressWidth(resources.distance, 6)"></div>
           </div>
         </div>
       </div>
@@ -64,6 +64,7 @@
       </div>
       
       <div class="toolbar-item toolbar-end">
+        <!-- TODO Replace this basic confirm dialog with our own custom one -->
         <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }" title="Discard your current drive and start a new one">New Game</button>
         <button onclick="showInstructionDialog()" style="cursor: help;"><span style="color: cornflowerblue;">?</span> How to Play</button>
       </div>
@@ -217,7 +218,7 @@
     </div> <!-- end of page content -->
     
     <div class="timer" x-data="{ timerState: timerState }">
-      🕘 <span x-text="msToTime(timerState.current - timerState.start)"></span>
+      🕘 <span x-text="formatTimer()"></span>
     </div>
     
     <dialog id="playDialog">
@@ -315,10 +316,14 @@
           <br/>
           <span x-text="turnState.count"></span> Turns <span class="unicon">⌛</span>
           <br/>
-          <span x-text="msToTime(timerState.end - timerState.start, true)"></span> Duration <span class="unicon">🕘</span>
+          <span x-text="formatTimer(true))"></span> Duration <span class="unicon">🕘</span>
         </div>
         <button onclick="restartGame()" class="details">🚗 Start Another Trip 🚗</button>
       </div>
+    </div>
+    
+    <div class="footer">
+      <img id="footerCar" src="./images/little-buddy.gif" class="footer-car" style="left: 0;"/>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js"></script>
