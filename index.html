@@ -46,7 +46,7 @@
       </div>
       
       <div x-data="{ turnState: turnState }" class="toolbar-item toolbar-middle">
-        <button onclick="modifySelected(1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to increase the selected dice by 1">+1</button>
+        <button onclick="modifySelected(1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to increase the selected die by 1">+1</button>
         <button onclick="rerollSelected()" :disabled="turnState.step === 1" title="Reroll the selected dice">
           <template x-if="turnState.usingRestStop">
             <span><u>R</u>eroll (free Rest Stop)</span>
@@ -58,7 +58,7 @@
             </span>
           </template>
         </button>
-        <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to decrease the selected dice by 1">-1</button>
+        <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to decrease the selected die by 1">-1</button>
         <span class="toolbar-divider"></span>
         <button onclick="tryToEndTurn()" title="End your turn after you rerolled once and allocated all dice"><u>E</u>nd Turn</button>
       </div>
@@ -226,8 +226,8 @@
       Welcome to <b>Road Trip!</b><br/>
       <p>A dice game about trying to travel to your destination while managing the fun (and fuel) of the trip.</p>
       <p>You win if your Distance is <span x-text="maxResources.distance"></span> or higher.<br/>You lose if your Fuel or Fun is 0 or lower.</p>
-      <p>Each turn you roll 5 dice.<br/>You <i>must</i> reroll once - which can be a single dice or any number of dice (as long as they are the same number). You can always reroll any Rest Stop ⚃ for free.</p>
-      <p>You <i>can</i> spend 2 Memories to reroll again or modify a dice by +1/-1, as many times as you want if you have Memories to spend.</p>
+      <p>Each turn you roll 5 dice.<br/>You <i>must</i> reroll once - which can be a single die or any number of dice (as long as they are the same number). You can always reroll any Rest Stop ⚃ for free.</p>
+      <p>You <i>can</i> spend 2 Memories to reroll again or modify a die by +1/-1, as many times as you want if you have Memories to spend.</p>
       <p>Then drag-and-drop the dice onto their matching slots. Note that if possible you <i>have</i> to place Route ⚀ + Travel ⚅ to get Distance.</p>
       <p>Gain +1 Memory (up to a maximum of <span x-text="maxResources.memories"></span>) for every pair of dice in a slot at the end of the turn.</p>
       <p>When done, press End Turn to see how your resources changed, then start a new turn and keep driving.</p>
