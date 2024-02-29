@@ -1,5 +1,6 @@
 # TODO
 - BUG in Firefox rendering, dice is white if moused over while rolling - fine if wiggle-dice anim is removed
+- How does the game behave with more dice? Simple way to increase difficulty?
 
 ##### Footer
 - Show an animated little car driving as a pseudo-progress bar along the bottom of the page with a pixel road
@@ -13,12 +14,10 @@
 - Save a history of runs? Or personal best time?
   - Online scoreboard with a Bun/Node backing? TOTALLY wouldn't be hackable lol
 - Save eventual customization options too:
-  - dice color (face, pip)
   - sort dice after roll or not
   - number of twirls (aka fast mode to have none - can't turn off in a timed match, and timed matches have a set number of twirls)
   - background image or not
   - snow effects (from Fishing Day), random chance by default, but configurable too
-    - Only bring in the related CSS if snow is actually falling
 
 #### Minor / daydream
 - Try wrapping in Electron or Tauri

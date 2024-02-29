@@ -46,8 +46,7 @@
       </div>
       
       <div x-data="{ turnState: turnState }" class="toolbar-item toolbar-middle">
-        <button onclick="modifySelected(1)" :disabled="turnState.step === 1" title="Spend 2 Memories to increase the selected dice by 1">+1</button>
-        <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" title="Spend 2 Memories to decrease the selected dice by 1">-1</button>
+        <button onclick="modifySelected(1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to increase the selected dice by 1">+1</button>
         <button onclick="rerollSelected()" :disabled="turnState.step === 1" title="Reroll the selected dice">
           <template x-if="turnState.usingRestStop">
             <span><u>R</u>eroll (free Rest Stop)</span>
@@ -59,13 +58,14 @@
             </span>
           </template>
         </button>
+        <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to decrease the selected dice by 1">-1</button>
         <span class="toolbar-divider"></span>
         <button onclick="tryToEndTurn()" title="End your turn after you rerolled once and allocated all dice"><u>E</u>nd Turn</button>
       </div>
       
       <div class="toolbar-item toolbar-end">
         <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }" title="Discard your current drive and start a new one">New Game</button>
-        <button onclick="showInstructionDialog()"><span style="color: cornflowerblue;">?</span> How to Play</button>
+        <button onclick="showInstructionDialog()" style="cursor: help;"><span style="color: cornflowerblue;">?</span> How to Play</button>
       </div>
     </div> <!-- end of toolbar -->
     
@@ -74,8 +74,8 @@
         <div class="dice-tray">
           <template x-data="{ loop: allDice }" x-for="diceObj in loop" :key="diceObj.id">
             <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
-                x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
-                class="dice-wrapper">
+                 x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
+                 class="dice-wrapper">
               <div x-bind:id="'hover' + diceObj.diceIndex" class="allow-hover">
                 <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
                   <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
@@ -102,22 +102,27 @@
       </div> <!-- end of dice tray -->
       
       <div class="page-instructions panel" x-data="{ showState: showState }">
-        <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
-        <div x-show="showState.instructionPanel" class="panel-content">
+        <div class="panel-header" onclick="toggleOptions()">&gt; Options</div>
+        <div x-show="showState.optionsPanel" class="panel-content">
           <div class="panel-buttons">
-            <button onclick="toggleInlineHelp()">❔ Inline <u>H</u>elp</button>
+            <button onclick="toggleInlineHelp()" style="cursor: help;">❔ Inline <u>H</u>elp</button>
             <button onclick="randomizeDiceColors()">🎲 <u>D</u>ice Colors</button>
           </div>
+        </div>
+        <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
+        <div x-show="showState.instructionPanel" class="panel-content">
           <ul>
             <li>Roll 5 six-sided dice</li>
             <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
             <li>Must place any Route + Travel combinations to gain Distance</li>
             <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
             <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
+            <br/>
             <b>Tips:</b><br/>
-            <li>Can press <u>1-5</u> to select dice, <u>R</u> to reroll, and <u>E</u> to End Turn</li>
+            <li>Can press <u>1-5</u> to select dice, <u>R</u> to reroll, +/- to modify, and <u>E</u> to End Turn</li>
             <li>Hold the <i>Shift</i> key while clicking a dice to select all matching faces</li>
           </ul>
+          <br/>
         </div>
       </div>
       
@@ -193,7 +198,7 @@
       <p>Gain +1 Memory (up to a maximum of 6) for every pair of dice in a slot at the end of the turn.</p>
       <p>When done, press End Turn to see how your resources changed, then start a new turn and keep driving.</p>
       <p><a href="https://horizongamesblog.files.wordpress.com/2022/12/road-trip_solo-dice-game-v1.pdf" target="_blank">Read the full rules here (PDF)</a> - or can print them out and play in real life!</p>
-      <button onclick="submitInstructionDialog()">Let's Play</button>
+      <button onclick="submitInstructionDialog()">🚗 Let's Play 🚗</button>
     </dialog>
     
     <dialog id="lostDialog" x-data="{ lostDialogState: lostDialogState, resources: resources }">
@@ -252,10 +257,10 @@
             <span class="header">You Lose!</span>
             
             <template x-if="resources.fuel <= 0">
-              <span class="header2"><br/>Ran out of Fuel</span>
+              <span class="header2"><br/>Ran out of <span class="resource-fuel">Fuel</span></span>
             </template>
             <template x-if="resources.fun <= 0">
-              <span class="header2"><br/>Ran out of Fun</span>
+              <span class="header2"><br/>Ran out of <span class="resource-fun">Fun</span></span>
             </template>
           </div>
         </template>
@@ -266,10 +271,7 @@
             <span class="header2"><br/>You reached <span x-text="destination"></span>
           </div>
         </template>
-        <br/>
-        <button onclick="restartGame()" class="details">Start Another Trip</button>
-        <br/><br/>
-        <span class="details">
+        <div class="details details-pad">
           <span x-text="resources.fuel"></span> Fuel <span class="unicon">⛽</span>
           <br/>
           <span x-text="resources.fun"></span> Fun <span class="unicon">😎</span>
@@ -281,7 +283,8 @@
           <span x-text="turnState.count"></span> Turns <span class="unicon">🕰</span>
           <br/>
           <span x-text="msToTime(timerState.end - timerState.start, true)"></span> Duration <span class="unicon">🕘</span>
-        </span>
+        </div>
+        <button onclick="restartGame()" class="details">🚗 Start Another Trip 🚗</button>
       </div>
     </div>
     

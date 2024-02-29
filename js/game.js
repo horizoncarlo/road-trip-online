@@ -4,11 +4,12 @@ const DICE_COUNT = 5;
 const ROLL_ANIMATION_MS = 100;
 const TWIRL_MIN = 3; const TWIRL_RAND = 7; // How many times to twirl the dice before actually rolling them
 const LS_NAMES = { // Hardcoded names for local storage keys
-  shownMobileNote: 'shownMobileNote',
-  shownInstructions: 'shownInstructions',
-  showLeft: 'showLeft',
-  showRight: 'showRight',
-  inlineHelp: 'showInlineHelp',
+  hasDisplayedMobileNote: 'hasDisplayedMobileNote',
+  hasDisplayedIntro: 'hasDisplayedIntro',
+  showInstructionPanel: 'showInstructionPanel',
+  showOptionsPanel: 'showOptionsPanel',
+  showTravelLog: 'showTravelLog',
+  showInlineHelp: 'showInlineHelp',
 };
 const labelObj = {
   traffic: 'Traffic ⚁',
@@ -61,9 +62,10 @@ After scoring go back to Step 1
 */
 let turnState = { count: 0, step: 1, usingRestStop: false, allocatedDice: 0 };
 let showState = { // Track which panels/elements are shown on the page
-  inlineHelp: getLocalStorageBoolean(LS_NAMES.inlineHelp, true),
-  instructionPanel: getLocalStorageBoolean(LS_NAMES.showLeft, true),
-  travelPanel: getLocalStorageBoolean(LS_NAMES.showRight, true),
+  inlineHelp: getLocalStorageBoolean(LS_NAMES.showInlineHelp, true),
+  instructionPanel: getLocalStorageBoolean(LS_NAMES.showInstructionPanel, true),
+  optionsPanel: getLocalStorageBoolean(LS_NAMES.showOptionsPanel, true),
+  travelPanel: getLocalStorageBoolean(LS_NAMES.showTravelLog, true),
 };
 let lostDialogState = {
   count: 0, // Count of dice in the Lost slot, pulled from scoreCounter.lost before showing the dialog
@@ -84,6 +86,9 @@ let resources; // Track our Fuel/Fun/Distance/Memories
 init();
 
 function init() {
+  if (Math.random() <= 0.4) {
+    initSnow();
+  }
   applyInlineHelp();
   resources = applyStartingResources(); // Initialize our default resources
   
@@ -99,6 +104,8 @@ function init() {
       else if (event.key === 'e' || event.key === 'E') { tryToEndTurn(); }
       else if (event.key === 'd' || event.key === 'D') { randomizeDiceColors(); }
       else if (event.key === 'h' || event.key === 'H') { toggleInlineHelp(); }
+      else if (event.key === '+' || event.key === '=') { modifySelected(1); }
+      else if (event.key === '-' || event.key === '_') { modifySelected(-1); }
       else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
       else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
       else if (event.key === '3') { toggleDiceSelection(allDice[2]); }
@@ -109,10 +116,10 @@ function init() {
   });
   
   // Note for mobile users that there's no testing there so the app is probably jank. Primarily because the idea of dragging dice on squished mobile screen is unappealing
-  if (!getLocalStorageBoolean(LS_NAMES.shownMobileNote)) {
+  if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedMobileNote)) {
     if (window.matchMedia("(max-width: 850px)").matches) {
       alert("Road Trip! is best played in a desktop browser.\nThere has been almost no testing on mobile devices.");
-      setLocalStorageItem(LS_NAMES.shownMobileNote, true);
+      setLocalStorageItem(LS_NAMES.hasDisplayedMobileNote, true);
     }
   }
   
@@ -198,9 +205,9 @@ function init() {
     });
     
     // Show our instructions dialog if we haven't on load before
-    if (!getLocalStorageBoolean(LS_NAMES.shownInstructions)) {
+    if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedIntro)) {
       showInstructionDialog();
-      setLocalStorageItem(LS_NAMES.shownInstructions, true);
+      setLocalStorageItem(LS_NAMES.hasDisplayedIntro, true);
     }
     else {
       // Start up the game
@@ -504,7 +511,7 @@ function showInstructionDialog() {
 }
 
 function submitInstructionDialog() {
-  if (!getLocalStorageBoolean(LS_NAMES.shownInstructions)) {
+  if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedIntro)) {
     restartGame();
   }
   document.getElementById('playDialog').close(); 
@@ -717,18 +724,23 @@ function markValidDice(diceObj) {
 
 function toggleInlineHelp() {
   showState.inlineHelp = !showState.inlineHelp;
-  setLocalStorageItem(LS_NAMES.inlineHelp, showState.inlineHelp);
+  setLocalStorageItem(LS_NAMES.showInlineHelp, showState.inlineHelp);
   applyInlineHelp();
 }
 
 function toggleInstructions() {
   showState.instructionPanel = !showState.instructionPanel;
-  setLocalStorageItem(LS_NAMES.showLeft, showState.instructionPanel);
+  setLocalStorageItem(LS_NAMES.showInstructionPanel, showState.instructionPanel);
+}
+
+function toggleOptions() {
+  showState.optionsPanel = !showState.optionsPanel;
+  setLocalStorageItem(LS_NAMES.showOptionsPanel, showState.optionsPanel);
 }
 
 function toggleTravelLog() {
   showState.travelPanel = !showState.travelPanel;
-  setLocalStorageItem(LS_NAMES.showRight, showState.travelPanel);
+  setLocalStorageItem(LS_NAMES.showTravelLog, showState.travelPanel);
 }
 
 function applyInlineHelp() {
@@ -819,6 +831,34 @@ function randomRange(min, randomCount) {
 
 function D6() {
   return randomRange(1, 6);
+}
+
+function initSnow() {
+  const snowflakes = document.createElement('div');
+  snowflakes.id = 'snowflakes';
+  for (let i = 0; i < randomRange(10, 5); i++) {
+      const currentSnowflake = document.createElement('div');
+      currentSnowflake.className = 'snowflake';
+      
+      const type = Math.random();
+      if (type <= 0.33) {
+          currentSnowflake.innerHTML = '&#10052;';
+      }
+      else if (type <= 0.66) {
+          currentSnowflake.innerHTML = '&#10053;';
+      }
+      else {
+          currentSnowflake.innerHTML = '&#10054;';
+      }
+      snowflakes.appendChild(currentSnowflake);
+  }
+  document.body.appendChild(snowflakes);
+}
+
+function removeSnow() {
+  if (document.getElementById('snowflakes')) {
+      document.body.removeChild(document.getElementById('snowflakes'));
+  }
 }
 
 const BACKGROUND_IMAGES = [
