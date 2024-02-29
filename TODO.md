@@ -1,7 +1,4 @@
 # TODO
-- BUG in Firefox rendering, dice is white if moused over while rolling - fine if wiggle-dice anim is removed
-- Make the resource maximums totally dynamic and backed by variables
-  - For example going 12 Distance instead of 6. All related text/teaching should be dynamically updated to reflect
 - Consider splitting up the mega main JS file, and probably CSS too
 - Could be fun to randomize destinations. See `destination` var. Could be our own personal list, or pull a list of cities in a country?
   - Look at https://public.opendatasoft.com/

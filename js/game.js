@@ -2,7 +2,9 @@
 
 const DICE_COUNT = 5; // This is fun to increase
 const ROLL_ANIMATION_MS = 100;
-const TWIRL_MIN = 3; const TWIRL_RAND = 7; // How many times to twirl the dice before actually rolling them
+const TWIRL_MIN = 3; const TWIRL_RAND = 10; // How many times to twirl the dice before actually rolling them
+const HOVER_CLASS = // Necessary due to a rendering bug with Firefox where hovering a dice while it's rolling stops the face from appearing later
+  navigator.userAgent.toLowerCase().includes('firefox') ? 'allow-hover-firefox' : 'allow-hover';
 const LS_NAMES = { // Hardcoded names for local storage keys
   hasDisplayedMobileNote: 'hasDisplayedMobileNote',
   hasDisplayedIntro: 'hasDisplayedIntro',
@@ -13,6 +15,12 @@ const LS_NAMES = { // Hardcoded names for local storage keys
   showSnow: 'showSnow',
   useFastMode: 'useFastMode',
   useBackgroundImage: 'useBackgroundImage',
+};
+const MAX_RESOURCES = {
+  fuel: 6,
+  fun: 6,
+  memories: 6,
+  distance: 6
 };
 const labelObj = {
   traffic: 'Traffic ⚁',
@@ -28,7 +36,7 @@ const notify = new Notyf({ duration: 4000, dismissible: true, position: { x: 'le
 
 class Dice {
   constructor(diceIndex, value, isSelected, isAllocated, isRolling, wrapperEle, hoverEle, diceEle, originalX, originalY) {
-    this.id = 'dice' + rand.random(); // For use with Alpine.js x-for to track any movement
+    this.id = 'dice' + Math.random(); // For use with Alpine.js x-for to track any movement
     this.diceIndex = diceIndex;
     this.value = value;
     this.isSelected = isSelected || false;
@@ -51,10 +59,6 @@ class Dice {
     this.isAllocated = false;
   }
 }
-
-// Fancier and more reliable random generator
-const MersenneTwister=function(t){null==t&&(t=(new Date).getTime()),this.N=624,this.M=397,this.MATRIX_A=2567483615,this.UPPER_MASK=2147483648,this.LOWER_MASK=2147483647,this.mt=new Array(this.N),this.mti=this.N+1,this.init_genrand(t)};MersenneTwister.prototype.init_genrand=function(t){for(this.mt[0]=t>>>0,this.mti=1;this.mti<this.N;this.mti++){t=this.mt[this.mti-1]^this.mt[this.mti-1]>>>30;this.mt[this.mti]=(1812433253*((4294901760&t)>>>16)<<16)+1812433253*(65535&t)+this.mti,this.mt[this.mti]>>>=0}},MersenneTwister.prototype.init_by_array=function(t,i){var s,h,m;for(this.init_genrand(19650218),s=1,h=0,m=this.N>i?this.N:i;m;m--){var n=this.mt[s-1]^this.mt[s-1]>>>30;this.mt[s]=(this.mt[s]^(1664525*((4294901760&n)>>>16)<<16)+1664525*(65535&n))+t[h]+h,this.mt[s]>>>=0,h++,++s>=this.N&&(this.mt[0]=this.mt[this.N-1],s=1),h>=i&&(h=0)}for(m=this.N-1;m;m--){n=this.mt[s-1]^this.mt[s-1]>>>30;this.mt[s]=(this.mt[s]^(1566083941*((4294901760&n)>>>16)<<16)+1566083941*(65535&n))-s,this.mt[s]>>>=0,++s>=this.N&&(this.mt[0]=this.mt[this.N-1],s=1)}this.mt[0]=2147483648},MersenneTwister.prototype.genrand_int32=function(){var t,i=new Array(0,this.MATRIX_A);if(this.mti>=this.N){var s;for(this.mti==this.N+1&&this.init_genrand(5489),s=0;s<this.N-this.M;s++)t=this.mt[s]&this.UPPER_MASK|this.mt[s+1]&this.LOWER_MASK,this.mt[s]=this.mt[s+this.M]^t>>>1^i[1&t];for(;s<this.N-1;s++)t=this.mt[s]&this.UPPER_MASK|this.mt[s+1]&this.LOWER_MASK,this.mt[s]=this.mt[s+(this.M-this.N)]^t>>>1^i[1&t];t=this.mt[this.N-1]&this.UPPER_MASK|this.mt[0]&this.LOWER_MASK,this.mt[this.N-1]=this.mt[this.M-1]^t>>>1^i[1&t],this.mti=0}return t=this.mt[this.mti++],t^=t>>>11,t^=t<<7&2636928640,t^=t<<15&4022730752,(t^=t>>>18)>>>0},MersenneTwister.prototype.random=function(){return this.genrand_int32()*(1/4294967296)};
-const rand = new MersenneTwister();
 
 /* Steps of a Turn:
 1: Roll all dice
@@ -394,8 +398,8 @@ function applyScore() {
   
   // Check for maximum Fuel and Fun
   // Note Memories are safely handled in the function above
-  if (resources.fuel > 6) { resources.fuel = 6; }
-  if (resources.fun > 6) { resources.fun = 6; }
+  if (resources.fuel > MAX_RESOURCES.fuel) { resources.fuel = MAX_RESOURCES.fuel; }
+  if (resources.fun > MAX_RESOURCES.fun) { resources.fun = MAX_RESOURCES.fun; }
 }
 
 function startTimer() {
@@ -425,7 +429,7 @@ function restartGame() {
   
   // 60% of the time, it hue shifts every time
   if (Math.random() >= 0.4) {
-    document.getElementById('footerCar').style.filter = 'hue-rotate(' + randomRange(0, 360) + 'deg)';
+    document.getElementById('footerCar').style.filter = 'hue-rotate(' + randomDegrees() + ')';
   }
   
   // Start the new game after a slight delay to let the overlay close
@@ -463,7 +467,7 @@ function endTurn() {
       logEvent("You lose! Ran out of Fun");
       gameOver = true;
     }
-    else if (resources.distance >= 6) {
+    else if (resources.distance >= MAX_RESOURCES.distance) {
       logEvent("You won the game!");
       logEvent("Totals: Fuel=" + resources.fuel + ", Fun=" + resources.fun + ", Memories=" + resources.memories);
       gameOver = true;
@@ -471,7 +475,7 @@ function endTurn() {
     
     if (gameOver) {
       endTimer(); // Stop tracking our time
-      logEvent("Duration: " + formatTimer(true));
+      logEvent("Duration: " + formatTimer(timerState.end - timerState.start, true));
       showEndOverlay();
     }
     else {
@@ -664,6 +668,7 @@ function modifySelected(faceMod) {
     const potentialValue = selectedDice[0].value + faceMod;
     if (potentialValue > 0 && potentialValue <= 6) {
       changeDice(selectedDice[0], potentialValue);
+      selectedDice[0].resetPosition();
       logEvent("Spent 2 Memories to modify");
       changeMemories(-2);
       deselectAllDice();
@@ -684,7 +689,7 @@ function modifySelected(faceMod) {
 function processDice(diceObj) {
   // Mark that we're rolling, and don't allow the hover effect or validation border
   diceObj.isRolling = true;
-  diceObj.hoverEle.removeClass('allow-hover');
+  diceObj.hoverEle.removeClass(HOVER_CLASS);
   markValidDice(diceObj);
   
   let maxSpins = randomRange(TWIRL_MIN, TWIRL_RAND);
@@ -712,8 +717,8 @@ function twirlDice(diceObj, reset) {
   }
   else {
     diceObj.diceEle.css('transform',
-      'rotateX(' + randomRange(0, 360) + 'deg) ' +
-      'rotateY(' + randomRange(0, 360) + 'deg)');
+      'rotateX(' + randomDegrees() + ') ' +
+      'rotateY(' + randomDegrees() + ')');
   }
 }
 
@@ -722,7 +727,7 @@ function rollDice(diceObj) {
   changeDice(diceObj, D6());
   
   // Re-enable the hover class
-  diceObj.hoverEle.addClass('allow-hover');
+  diceObj.hoverEle.addClass(HOVER_CLASS);
   
   // Mark we're done rolling once the animation completes
   setTimeout(() => {
@@ -742,7 +747,7 @@ function changeDice(diceObj, newVal) {
 function changeMemories(amount) {
   resources.memories += amount;
   if (resources.memories < 0) { resources.memories = 0; }
-  if (resources.memories > 6) { resources.memories = 6; }
+  if (resources.memories > MAX_RESOURCES.memories) { resources.memories = MAX_RESOURCES.memories; }
 }
 
 function changeDistance(amount, setInstead) {
@@ -771,10 +776,10 @@ function changeDistance(amount, setInstead) {
     if (resources.distance > 0) {
       const footerCar = document.getElementById('footerCar');
       const totalWidth = document.body.clientWidth;
-      const segmentWidth = totalWidth/6;
+      const segmentWidth = totalWidth/MAX_RESOURCES.distance;
       footerCar.style.left = (resources.distance * segmentWidth) + 'px';
       
-      if (resources.distance >= 6) {
+      if (resources.distance >= MAX_RESOURCES.distance) {
         // Hard cap our distance at the very end of the screen, to stop scrollbars
         footerCar.style.left = (totalWidth - 60) + 'px'; // TODO Don't have hardcoded width of the car here
         speedyFooterCarAnim();
@@ -919,11 +924,7 @@ function logEvent(event) {
   }
 }
 
-function formatTimer(isEndTimer) {
-  let toFormat = isEndTimer ?
-    timerState.end - timerState.start :
-    timerState.current - timerState.start;
-  
+function formatTimer(toFormat, isEndTimer) {
   function pad(val) {
     return val >= 10 ? val : ('0' + val);
   }
@@ -941,15 +942,29 @@ function formatTimer(isEndTimer) {
 function randomColor() {
   const letters = '0123456789ABCDEF';
   let color = '#';
-  for (var i = 0; i < 6; i++) {
-    color += letters[Math.floor(rand.random() * 16)];
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
   }
   
   return color;
 }
 
-function randomRange(min, randomCount) {
-  return min + Math.floor(rand.random() * randomCount);
+function randomDegrees() {
+  return randomRange(0, 360) + 'deg';
+}
+
+function randomRange(min, max) {
+  let randomNumber = 0;
+  if (window && window.crypto) {
+    const randomBuffer = new Uint32Array(1);
+    window.crypto.getRandomValues(randomBuffer);
+    randomNumber = randomBuffer[0] / (0xffffffff + 1);
+  }
+  else {
+    randomNumber = Math.random();
+  }
+  
+  return Math.floor(randomNumber * (max - min + 1)) + min;
 }
 
 function D6() {
@@ -959,7 +974,7 @@ function D6() {
 function initSnow() {
   const snowflakes = document.createElement('div');
   snowflakes.id = 'snowflakes';
-  for (let i = 0; i < randomRange(10, 5); i++) {
+  for (let i = 0; i < randomRange(10, 15); i++) {
       const currentSnowflake = document.createElement('div');
       currentSnowflake.className = 'snowflake';
       

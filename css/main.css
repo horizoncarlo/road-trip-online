@@ -486,13 +486,18 @@ html, body, button, input {
 .dice-face-4 { transform: rotateX( 90deg) translateZ(var(--dice-size-half)); }
 .dice-face-3 { transform: rotateX(-90deg) translateZ(var(--dice-size-half)); }
 
-.allow-hover {
+.allow-hover,
+.allow-hover-firefox {
   transition: box-shadow 500ms;
   box-shadow: 0 0 10px var(--basic-gray);
 }
 
-.allow-hover:hover {
+.allow-hover:hover,
+.allow-hover-firefox:hover {
   box-shadow: none;
+}
+
+.allow-hover:hover {
   transform-style: preserve-3d;
   animation-name: wiggle-dice;
   animation-duration: 3s;
