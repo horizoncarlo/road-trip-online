@@ -433,6 +433,7 @@ function restartGame() {
     logEvent("🌄 New game started!");
     turnState.count = 0;
     randomizeDiceColors();
+    applyBackgroundImage();
     applyStartingResources();
     startTimer();
     startTurn();
@@ -1049,6 +1050,3 @@ function applyBackgroundImage() {
     document.body.style.backgroundImage = '';
   }
 }
-// Initialize all the way down here instead of in init() because we want to store the lengthy BACKGROUND_IMAGES array at the bottom for readability
-// Somewhat undone by having this super long comment
-applyBackgroundImage();
