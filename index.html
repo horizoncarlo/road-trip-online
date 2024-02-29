@@ -242,7 +242,7 @@
       <template x-if="lostDialogState.count !== 1">
         <p>You have <b><span x-text="lostDialogState.count"></span> Lost dice</b>, which <i>each</i> give -2 to Fuel or Fun</p>
       </template>
-      <p>Currently you have <span x-text="resources.fuel"></span> Fuel and <span x-text="resources.fun"></span> Fun</p>
+      <p>Currently you have <span x-text="resources.fuel"></span> Fuel ⛽ and <span x-text="resources.fun"></span> Fun 😎</p>
       <p>How do you want to apply your Lost dice?</p>
       <template x-if="lostDialogState.count !== 1">
         <template x-for="i in lostDialogState.count">

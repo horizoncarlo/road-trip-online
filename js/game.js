@@ -1058,7 +1058,7 @@ const BACKGROUND_IMAGES = [
 ];
 function applyBackgroundImage() {
   if (settings.backgroundImage) {
-    const selected = BACKGROUND_IMAGES[randomRange(0, BACKGROUND_IMAGES.length)];
+    const selected = BACKGROUND_IMAGES[randomRange(0, BACKGROUND_IMAGES.length-1)];
     document.body.style.backgroundImage = "url('./backgrounds/" + selected + "')";
   }
   else {
