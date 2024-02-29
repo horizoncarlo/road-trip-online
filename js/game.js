@@ -800,7 +800,7 @@ function msToTime(toFormat, showMs) {
   const mins = toFormat % 60;
   
   // Output Minutes only if found, otherwise Seconds, and Milliseconds if asked with showMs
-  return `${mins > 0 ? (pad(mins) + 'm:') : ''}${pad(secs)}s${showMs ? ('.' + ms) : ''}`;
+  return `${mins > 0 ? (pad(mins) + 'm:') : ''}${pad(secs)}s${showMs ? ('.' + Math.round(ms)) + 'ms' : ''}`;
 }
 
 function randomColor() {
