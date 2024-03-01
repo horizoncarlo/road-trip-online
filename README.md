@@ -32,4 +32,4 @@ The app uses:
 - Notyf as a light toast solution
 - Otherwise plain vanilla HTML and JS
 
-As a result you can play the game locally by visiting index.html in a web browser - no further setup needed
+As a result you can play the game locally by visiting `index.html` in a web browser - no further setup needed
