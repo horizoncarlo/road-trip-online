@@ -3,38 +3,38 @@
 Credit to the random pixel art I found to use in my game!
 Contact me at https://github.com/horizoncarlo/road-trip-online if this is a problem!
 
-./little-buddy.gif
+little-buddy
 https://pixeljoint.com/pixelart/81033.htm
 
-./road-tile.png
+road-tile
 https://www.artstation.com/artwork/0nxqyG
 
-./welcome-image.webp
+welcome-image
 https://www.slynyrd.com/blog/2019/11/12/pixelblog-23-parallax-scrolling
 
-./you-win.webp
+you-win
 https://64.media.tumblr.com/486322ba78b854b64f56501bc675f164/tumblr_prerqrnkSE1uy5z3wo1_1280.gifv
 
-./out-of-fuel.png
+out-of-fuel
 Frame from https://www.reddit.com/r/perfectloops/comments/15xalrd/a_evening_city_view/
 
-./out-of-fun.png
+out-of-fun
 Frame from https://www.reddit.com/r/PixelArt/comments/ns8tv1/oc_accident/
 
-./unused/college-cruise.gif
+unused/college-cruise
 https://78.media.tumblr.com/62b4e733d8a6f5712779ba5ad9eea824/tumblr_oju8gtoZXj1u77u56o1_1280.gif
 
-./unused/desert-drive.mp4
+unused/desert-drive
 https://www.reddit.com/r/PixelArt/comments/cenu49/driving_animation_doodle_128_x_128_30_colors/
 
-./unused/drifting.mp4
+unused/drifting
 https://www.reddit.com/r/PixelArt/comments/v9xyw7/night_drive/
 
-./unused/night-drive.mp4
+unused/night-drive
 https://www.reddit.com/r/saudiarabia/comments/11ty0nr/1211_am_pixel_art/
 
-./unused/quiet-intersection.mp4
+unused/quiet-intersection
 https://www.reddit.com/r/PixelArt/comments/sk014s/quiet_empty_street/
 
-./unused/retro-racer.gif
+unused/retro-racer
 https://i.pinimg.com/originals/09/cc/14/09cc14191586aa0c5bb8938672534f4f.gif

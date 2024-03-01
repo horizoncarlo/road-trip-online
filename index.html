@@ -17,7 +17,7 @@
     <script src="./js/jquery.ui.touch-punch.js"></script>
     
     <!-- Throw in a simple toast notification system instead of rolling our own. See the end of <body> for the JS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css"/>
   </head>
 
   <body>
@@ -243,7 +243,7 @@
     </dialog>
     
     <dialog id="playDialog" x-data="{ maxResources: MAX_RESOURCES }">
-      <img src="./images/welcome-image.webp" class="welcome-image"/>
+      <img src="./images/welcome-image.webp" loading="lazy" class="welcome-image" />
       Welcome to <b>Road Trip!</b><br/>
       <p>A dice game about trying to travel to your destination while managing the fun (and fuel) of the trip.</p>
       <p>You win if your Distance is <span x-text="maxResources.distance"></span> or higher.<br/>You lose if your Fuel or Fun is 0 or lower.</p>
@@ -303,10 +303,10 @@
         <template x-if="resources.fuel <= 0 || resources.fun <= 0">
           <div>
             <template x-if="resources.fuel <= 0">
-              <img src="./images/out-of-fuel.png" />
+              <img src="./images/out-of-fuel.jpg" loading="lazy" />
             </template>
             <template x-if="resources.fun <= 0">
-              <img src="./images/out-of-fun.png" />
+              <img src="./images/out-of-fun.jpg" loading="lazy" />
             </template>
             
             <span class="header">You Lose!</span>
@@ -321,7 +321,7 @@
         </template>
         <template x-if="resources.fuel > 0 && resources.fun > 0 && resources.distance >= maxResources.distance">
           <div>
-            <img src="./images/you-win.webp" />
+            <img src="./images/you-win.webp" loading="lazy" />
             <span class="header">You Win!</span>
             <span class="header2"><br/>You reached <span x-text="destination"></span>
           </div>
