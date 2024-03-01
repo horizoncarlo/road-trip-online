@@ -3,11 +3,15 @@
 
 Road Trip! is an online version adapted from a physical tabletop dice placement game.
 
+**Demo**: https://road-trip-online.onrender.com/
+
+**Print Rules**: https://horizongamesblog.wordpress.com/road-trip-2022/
+
 ### How to Play
-You win if your Distance is 6 or higher.
+You win if your Distance is 6 or higher.  
 You lose if your Fuel or Fun is 0 or lower.
 
-Each turn you roll 5 dice.
+Each turn you roll 5 dice.  
 You must reroll once - which can be a single die or any number of dice (as long as they are the same number). You can always reroll any Rest Stop ⚃ for free.
 
 You can spend 2 Memories to reroll again or modify a die by +1/-1, as many times as you want if you have Memories to spend.
@@ -21,11 +25,11 @@ When done, press End Turn to see how your resources changed, then start a new tu
 ### Print Rules
 For more information on the game you can find the free rules at: https://horizongamesblog.wordpress.com/road-trip-2022/
 
-### Live Demo
-To see the application running check out the link (initial startup might be slow due to hosting solution spinning up):
-- **App** https://road-trip-online.onrender.com/
-
 ### Setup
-The app uses: Alpine.js for easier model binding, jQueryUI (of all things...) for simplifying drag-and-drop, and Notyf as a light toast solution. Otherwise plain vanilla HTML and JS.
+The app uses:
+- Alpine.js for easier model binding
+- jQueryUI (of all things...) for simplifying drag-and-drop
+- Notyf as a light toast solution
+- Otherwise plain vanilla HTML and JS
 
 As a result you can play the game locally by visiting index.html in a web browser - no further setup needed
