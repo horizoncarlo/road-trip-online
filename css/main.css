@@ -53,6 +53,7 @@ dialog {
 dialog button {
   float: right;
   margin-left: 10px;
+  min-width: 75px;
 }
 
 dialog,
@@ -134,7 +135,14 @@ html, body, button, input {
 }
 
 .footer {
-  cursor: e-resize;
+  width: 100%;
+  position: fixed;
+  bottom: 0;
+  height: 30px;
+  opacity: 0.95;
+  background-image: url('../images/road-tile.png');
+  background-repeat: repeat;
+  z-index: 1;
 }
 
 .footer-car {
@@ -143,6 +151,8 @@ html, body, button, input {
   height: 40px;
   bottom: 5px;
   left: 0;
+  z-index: 2;
+  cursor: e-resize;
   filter: hue-rotate(0deg);
   transition: left 10s;
   transition-timing-function: ease-in-out;
@@ -224,6 +234,7 @@ html, body, button, input {
   right: 0;
   border-top-left-radius: 5px;
   padding: 10px;
+  z-index: 5;
 }
 
 .page-instructions {

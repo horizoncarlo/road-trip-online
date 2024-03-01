@@ -12,6 +12,7 @@ const LS_NAMES = { // Hardcoded names for local storage keys
   showTravelLog: 'showTravelLog',
   showInlineHelp: 'showInlineHelp',
   showSnow: 'showSnow',
+  showRoad: 'showRoad',
   useFastMode: 'useFastMode',
   useBackgroundImage: 'useBackgroundImage',
 };
@@ -47,6 +48,7 @@ let settings = { // Track which panels/elements are shown on the page
   optionsPanel: getLocalStorageBoolean(LS_NAMES.showOptionsPanel, true),
   travelPanel: getLocalStorageBoolean(LS_NAMES.showTravelLog, true),
   snow: getLocalStorageBoolean(LS_NAMES.showSnow, false),
+  road: getLocalStorageBoolean(LS_NAMES.showRoad, true),
   fastMode: getLocalStorageBoolean(LS_NAMES.useFastMode, false),
   backgroundImage: getLocalStorageBoolean(LS_NAMES.useBackgroundImage, true),
 };
@@ -75,6 +77,7 @@ function init() {
     settings.inlineHelp = false;
     settings.backgroundImage = false;
     settings.snow = false;
+    settings.road = false;
   }
   setupHotkeys();
   applySnow();
@@ -114,7 +117,7 @@ function alpineInit() {
   // TODO Could do an effect on `resources` to save to local storage, so that refreshing the page didn't lose the score. Maybe slightly encode so it's less immediately obvious to edit it to cheat?
   
   $('#footerCar').draggable({
-    containment: '.dice-slots-wrap',
+    containment: 'document',
     delay: 125,
     axis: 'y'
   });
@@ -471,6 +474,14 @@ function submitLostDialog(allFun) {
   Alpine.nextTick(() => endTurn());
 }
 
+function showConfirmNewDialog() {
+  document.getElementById('confirmNewDialog').showModal();
+}
+
+function closeConfirmNewDialog() {
+  document.getElementById('confirmNewDialog').close();
+}
+
 function showLostDialog() {
   // Has to be a better way, but for the initial implementation we manually reset our radio buttons
   for (let i = 1; i <= lostDialogState.count; i++) {
@@ -772,6 +783,7 @@ function toggleFastMode() { toggleStoredItem('fastMode', LS_NAMES.useFastMode); 
 function toggleInlineHelp() { toggleStoredItem('inlineHelp', LS_NAMES.showInlineHelp, applyInlineHelp); }
 function toggleBackgroundImage() { toggleStoredItem('backgroundImage', LS_NAMES.useBackgroundImage, applyBackgroundImage); }
 function toggleSnow() { toggleStoredItem('snow', LS_NAMES.showSnow, applySnow); }
+function toggleRoad() { toggleStoredItem('road', LS_NAMES.showRoad); }
 function toggleStoredItem(settingsVarName, storageName, optionalCallback) {
   settings[settingsVarName] = !settings[settingsVarName];
   setLocalStorageItem(storageName, settings[settingsVarName]);

@@ -6,6 +6,9 @@ Contact me at https://github.com/horizoncarlo/road-trip-online if this is a prob
 ./little-buddy.gif
 https://pixeljoint.com/pixelart/81033.htm
 
+./road-tile.png
+https://www.artstation.com/artwork/0nxqyG
+
 ./welcome-image.webp
 https://www.slynyrd.com/blog/2019/11/12/pixelblog-23-parallax-scrolling
 

@@ -71,8 +71,7 @@
       </div>
       
       <div class="toolbar-item toolbar-end hide-on-mobile">
-        <!-- TODO Replace this basic confirm dialog with our own custom one -->
-        <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }" title="Discard your current drive and start a new one">New Game</button>
+        <button onclick="showConfirmNewDialog()" title="Discard your current drive and start a new one">New Game</button>
         <button onclick="showInstructionDialog()" style="cursor: help;"><span style="color: cornflowerblue;">?</span> How to Play</button>
       </div>
     </div> <!-- end of toolbar -->
@@ -189,6 +188,13 @@
               </span>
               Snowing
             </div>
+            <div class="switch-wrap hide-on-mobile" onclick="toggleRoad()" title="Show the little car that could">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.road"></input>
+                <span class="slider round"></span>
+              </span>
+              Road Footer
+            </div>
           </div>
         </div>
         <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
@@ -227,6 +233,14 @@
     <div class="timer" x-data="{ timerState: timerState }">
       🕘 <span x-text="formatTimer(timerState.current - timerState.start)"></span>
     </div>
+    
+    <dialog id="confirmNewDialog">
+      <p>Are you sure you want to start a new game?</p>
+      <i>This will discard your current drive and reset your resources<br/>(and most importantly redo your dice colors)</i>
+      <br/><br/>
+      <button onclick="closeConfirmNewDialog(); restartGame()">Yes, Restart</button>
+      <button onclick="closeConfirmNewDialog()">No</button>
+    </dialog>
     
     <dialog id="playDialog" x-data="{ maxResources: MAX_RESOURCES }">
       <img src="./images/welcome-image.webp" class="welcome-image"/>
@@ -329,10 +343,10 @@
       </div>
     </div> <!-- end of end overlay -->
     
-    <!-- TODO Add a pixel road on the footer for the car to start driving on -->
-    <div class="footer hide-on-mobile">
-      <img id="footerCar" src="./images/little-buddy.gif" class="footer-car" style="left: 0;"/>
-    </div>
+    <template x-data="{ settings: settings }" x-if="!isMobileSize()">
+      <div class="footer" :style="'display: ' + (settings.road ? 'block' : 'none')"></div>
+    </template>
+    <img id="footerCar" src="./images/little-buddy.gif" class="footer-car hide-on-mobile" style="left: 0;"/>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js"></script>
     <script src="./js/util.js"></script>
