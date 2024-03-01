@@ -1,0 +1,84 @@
+@media (max-width: 850px) { /* Mobile stuff */
+  :root {
+    --dice-size: 60px;
+    --dice-size-half: calc(var(--dice-size) / 2);
+    --dice-pip-size: 12px;
+  }
+  
+  .hide-on-mobile {
+    display: none;
+  }
+  
+  html,
+  dialog,
+  .dice-slots {
+    min-width: 0;
+  }
+  
+  .toolbar {
+    height: auto;
+  }
+  
+  .toolbar-item {
+    width: 100%;
+  }
+  
+  .resource-bar {
+    width: 22%;
+  }
+  
+  .dice-tray-wrap {
+    padding: 5px 0 5px 0;
+  }
+  
+  dialog,
+  .dice-tray {
+    max-width: none;
+  }
+  
+  .panel {
+    position: relative;
+    top: auto;
+    width: auto;
+  }
+  
+  .page-instructions {
+    left: auto;
+  }
+  
+  .travel-log {
+    margin-top: 10px;
+    right: auto;
+  }
+  
+  .dice-pip {
+    margin: 2px;
+  }
+  
+  .end-overlay img {
+    position: static;
+    display: block;
+    max-width: 90%;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .end-overlay .content {
+    width: 100%;
+    padding: 5px;
+  }
+  
+  .end-overlay .header {
+    font-size: 1.3em;
+  }
+  
+  .end-overlay .header2 {
+    font-size: 1.2em;
+  }
+  
+  .end-overlay .details,
+  .end-overlay .unicon {
+    font-size: 1.1em;
+  }
+}

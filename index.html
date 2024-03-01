@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>"/>
     <link rel="stylesheet" type="text/css" href="./css/main.css"/>
+    <link rel="stylesheet" type="text/css" href="./css/switch-component.css"/>
     
     <!-- Bring in Alpine.js -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js"></script>
@@ -13,6 +14,7 @@
     <!-- Go old fashioned and use jQueryUI for the drag and drop - fit better than Dragula and Droppable.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+    <script src="./js/jquery.ui.touch-punch.js"></script>
     
     <!-- Throw in a simple toast notification system instead of rolling our own. See the end of <body> for the JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css">
@@ -23,23 +25,23 @@
       <div x-data="{ resources: resources, maxResources: MAX_RESOURCES }" class="toolbar-item toolbar-start">
         <div class="resource-wrap">
           <div class="resource-bar">
-            <span class="resource-bar-text">Fuel ⛽<br/><span x-text="resources.fuel"></span>/<span x-text="maxResources.fuel"></span></span>
+            <span class="resource-bar-text"><span class="hide-on-mobile">Fuel </span>⛽<br/><span x-text="resources.fuel"></span>/<span x-text="maxResources.fuel"></span></span>
             <template x-if="resources.fuel > 0">
               <div class="resource-bar-color resource-fuel" :style="getProgressWidth(resources.fuel, maxResources.fuel)"></div>
             </template>
           </div>
           <div class="resource-bar">
-            <span class="resource-bar-text">Fun 😎<br/><span x-text="resources.fun"></span>/<span x-text="maxResources.fun"></span></span>
+            <span class="resource-bar-text"><span class="hide-on-mobile">Fun </span>😎<br/><span x-text="resources.fun"></span>/<span x-text="maxResources.fun"></span></span>
             <template x-if="resources.fun > 0">
               <div class="resource-bar-color resource-fun" :style="getProgressWidth(resources.fun, maxResources.fun)"></div>
             </template>
           </div>
           <div class="resource-bar">
-            <span class="resource-bar-text">Memories 📚<br/><span x-text="resources.memories"></span>/<span x-text="maxResources.memories"></span></span>
+            <span class="resource-bar-text"><span class="hide-on-mobile">Memories </span>📚<br/><span x-text="resources.memories"></span>/<span x-text="maxResources.memories"></span></span>
             <div class="resource-bar-color resource-memories" :style="getProgressWidth(resources.memories, maxResources.memories)"></div>
           </div>
           <div class="resource-bar">
-            <span class="resource-bar-text">Distance 🛣<br/><span x-text="resources.distance"></span>/<span x-text="maxResources.distance"></span></span>
+            <span class="resource-bar-text"><span class="hide-on-mobile">Distance </span>🛣<br/><span x-text="resources.distance"></span>/<span x-text="maxResources.distance"></span></span>
             <div class="resource-bar-color resource-distance" :style="getProgressWidth(resources.distance, maxResources.distance)"></div>
           </div>
         </div>
@@ -59,11 +61,16 @@
           </template>
         </button>
         <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to decrease the selected die by 1">-1</button>
-        <span class="toolbar-divider"></span>
+        <template x-if="isMobileSize()">
+          <br/>
+        </template>
+        <template x-if="!isMobileSize()">
+          <span class="toolbar-divider"></span>
+        </template>
         <button onclick="tryToEndTurn()" title="End your turn after you rerolled once and allocated all dice"><u>E</u>nd Turn</button>
       </div>
       
-      <div class="toolbar-item toolbar-end">
+      <div class="toolbar-item toolbar-end hide-on-mobile">
         <!-- TODO Replace this basic confirm dialog with our own custom one -->
         <button onclick="if (confirm('Are you sure you want to start a new game?')) { restartGame() }" title="Discard your current drive and start a new one">New Game</button>
         <button onclick="showInstructionDialog()" style="cursor: help;"><span style="color: cornflowerblue;">?</span> How to Play</button>
@@ -101,73 +108,6 @@
           </template>
         </div>
       </div> <!-- end of dice tray -->
-      
-      <div class="page-instructions panel" x-data="{ settings: settings }">
-        <div class="panel-header" onclick="toggleOptions()">&gt; Options</div>
-        <div x-show="settings.optionsPanel" class="panel-content">
-          <div class="panel-buttons">
-            <button onclick="randomizeDiceColors()" title="Arguably the TRUE game - randomize your dice face and pip colors">🎲 Change <u>D</u>ice Colors</button>
-            <div class="switch-wrap" onclick="toggleInlineHelp()" title="Show help and tips on dice use and resources info within the slot panel">
-              <span class="switch">
-                <input type="checkbox" :checked="settings.inlineHelp"></input>
-                <span class="slider round"></span>
-              </span>
-              Inline <u>H</u>elp
-            </div>
-            <div class="switch-wrap" onclick="toggleFastMode()" title="Ignore all my beautiful animations and resolve the dice almost instantly">
-              <span class="switch">
-                <input type="checkbox" :checked="settings.fastMode"></input>
-                <span class="slider round"></span>
-              </span>
-              Fast Roll
-            </div>
-            <div class="switch-wrap" onclick="toggleBackgroundImage()" title="Use pictures of my road trips as the background">
-              <span class="switch">
-                <input type="checkbox" :checked="settings.backgroundImage"></input>
-                <span class="slider round"></span>
-              </span>
-              Background Image
-            </div>
-            <div class="switch-wrap" onclick="toggleSnow()" title="Delicately falling flakes...or not">
-              <span class="switch">
-                <input type="checkbox" :checked="settings.snow"></input>
-                <span class="slider round"></span>
-              </span>
-              Snowing
-            </div>
-          </div>
-        </div>
-        <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
-        <div x-show="settings.instructionPanel" class="panel-content">
-          <ul>
-            <li>Roll 5 six-sided dice</li>
-            <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
-            <li>Must place any Route + Travel combinations to gain Distance</li>
-            <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
-            <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
-            <br/>
-            <b>Hotkeys:</b><br/>
-            <li>
-              <u>R</u> to reroll<br/>
-              <u>E</u> to End Turn<br/>
-              <u>D</u> to change dice color<br/>
-              <u>1-5</u> to select dice<br/>
-              +/- to modify<br/>
-            </li>
-            <li>Hold the <i>Shift</i> key while selecting a dice to get all matching faces</li>
-          </ul>
-          <br/>
-        </div>
-      </div>
-      
-      <div class="travel-log panel" x-data="{ settings: settings }">
-        <div class="panel-header" onclick="toggleTravelLog()">&gt; Travel Log</div>
-        <div id="travelLogScroll" class="panel-content" x-show="settings.travelPanel" x-data="{ log: travelLog }">
-          <template x-for="entry in log">
-            <span x-text="entry"></span>
-          </template>
-        </div>
-      </div>
       
       <div class="dice-slots-wrap">
         <div class="dice-slots">
@@ -215,6 +155,73 @@
           </div><span class="dice-helper">=</span><span class="dice-helper-text-big">&nbsp;+1 Distance</span>
         </div>
       </div> <!-- end of dice slots-->
+      
+      <div class="page-instructions panel" x-data="{ settings: settings }">
+        <div class="panel-header" onclick="toggleOptions()">&gt; Options</div>
+        <div x-show="settings.optionsPanel" class="panel-content">
+          <div class="panel-buttons">
+            <button onclick="randomizeDiceColors()" title="Arguably the TRUE game - randomize your dice face and pip colors">🎲 Change <u>D</u>ice Colors</button>
+            <div class="switch-wrap" onclick="toggleInlineHelp()" title="Show help and tips on dice use and resources info within the slot panel">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.inlineHelp"></input>
+                <span class="slider round"></span>
+              </span>
+              Inline <u>H</u>elp
+            </div>
+            <div class="switch-wrap" onclick="toggleFastMode()" title="Ignore all my beautiful animations and resolve the dice almost instantly">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.fastMode"></input>
+                <span class="slider round"></span>
+              </span>
+              Fast Roll
+            </div>
+            <div class="switch-wrap hide-on-mobile" onclick="toggleBackgroundImage()" title="Use pictures of my road trips as the background">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.backgroundImage"></input>
+                <span class="slider round"></span>
+              </span>
+              Background Image
+            </div>
+            <div class="switch-wrap hide-on-mobile" onclick="toggleSnow()" title="Delicately falling flakes...or not">
+              <span class="switch">
+                <input type="checkbox" :checked="settings.snow"></input>
+                <span class="slider round"></span>
+              </span>
+              Snowing
+            </div>
+          </div>
+        </div>
+        <div class="panel-header" onclick="toggleInstructions()"">&gt; Instructions</div>
+        <div x-show="settings.instructionPanel" class="panel-content">
+          <ul>
+            <li>Roll 5 six-sided dice</li>
+            <li>Must reroll once per turn (single die or any number of dice with the same face)</li>
+            <li>Must place any Route + Travel combinations to gain Distance</li>
+            <li>Can spend 2 Memories to reroll again, or +1/-1 a single die face</li>
+            <li>Get +1 Memory per doubles in the same box (after resolving everything)</li>
+            <br/>
+            <b>Hotkeys:</b><br/>
+            <li>
+              <u>R</u> to reroll<br/>
+              <u>E</u> to End Turn<br/>
+              <u>D</u> to change dice color<br/>
+              <u>1-5</u> to select dice<br/>
+              +/- to modify<br/>
+            </li>
+            <li>Hold the <i>Shift</i> key while selecting a dice to get all matching faces</li>
+          </ul>
+          <br/>
+        </div>
+      </div>
+      
+      <div class="travel-log panel" x-data="{ settings: settings }">
+        <div class="panel-header" onclick="toggleTravelLog()">&gt; Travel Log</div>
+        <div id="travelLogScroll" class="panel-content" x-show="settings.travelPanel" x-data="{ log: travelLog }">
+          <template x-for="entry in log">
+            <span x-text="entry"></span>
+          </template>
+        </div>
+      </div>
     </div> <!-- end of page content -->
     
     <div class="timer" x-data="{ timerState: timerState }">
@@ -275,7 +282,7 @@
           <button onclick="submitLostDialog(false)">-<span x-text="lostDialogState.count * 2"></span> Fuel ⛽</button>
         </div>
       </template>
-    </dialog>
+    </dialog> <!-- end of lost dialog -->
     
     <div id="endOverlay" class="end-overlay" x-data="{ resources: resources, maxResources: MAX_RESOURCES, turnState: turnState, timerState: timerState }">
       <div class="content">
@@ -320,13 +327,16 @@
         </div>
         <button onclick="restartGame()" class="details">🚗 Start Another Trip 🚗</button>
       </div>
-    </div>
+    </div> <!-- end of end overlay -->
     
-    <div class="footer">
+    <!-- TODO Add a pixel road on the footer for the car to start driving on -->
+    <div class="footer hide-on-mobile">
       <img id="footerCar" src="./images/little-buddy.gif" class="footer-car" style="left: 0;"/>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.js"></script>
+    <script src="./js/util.js"></script>
+    <script src="./js/dice.js"></script>
     <script src="./js/game.js"></script>
   </body>
 </html>

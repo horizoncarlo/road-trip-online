@@ -6,7 +6,6 @@ const TWIRL_MIN = 3; const TWIRL_RAND = 10; // How many times to twirl the dice 
 const HOVER_CLASS = // Necessary due to a rendering bug with Firefox where hovering a dice while it's rolling stops the face from appearing later
   navigator.userAgent.toLowerCase().includes('firefox') ? 'allow-hover-firefox' : 'allow-hover';
 const LS_NAMES = { // Hardcoded names for local storage keys
-  hasDisplayedMobileNote: 'hasDisplayedMobileNote',
   hasDisplayedIntro: 'hasDisplayedIntro',
   showInstructionPanel: 'showInstructionPanel',
   showOptionsPanel: 'showOptionsPanel',
@@ -33,32 +32,6 @@ const labelObj = {
   travel: 'Travel ⚅'
 };
 const notify = new Notyf({ duration: 4000, dismissible: true, position: { x: 'left', y: 'bottom' } });
-
-class Dice {
-  constructor(diceIndex, value, isSelected, isAllocated, isRolling, wrapperEle, hoverEle, diceEle, originalX, originalY) {
-    this.id = 'dice' + Math.random(); // For use with Alpine.js x-for to track any movement
-    this.diceIndex = diceIndex;
-    this.value = value;
-    this.isSelected = isSelected || false;
-    this.isAllocated = isAllocated || false;
-    this.isRolling = isRolling || false;
-    // Dice are laid out as 3 divs: wrapper, then hover, then dice (then all the faces/pips inside that)
-    this.wrapperEle = wrapperEle;
-    this.hoverEle = hoverEle;
-    this.diceEle = diceEle;
-    this.originalX = originalX;
-    this.originalY = originalY;
-  }
-  
-  resetPosition() {
-    this.wrapperEle.css('left', this.originalX);
-    this.wrapperEle.css('top', this.originalY);
-    
-    // Remove any validation border, and mark us unallocated
-    markValidDice(this);
-    this.isAllocated = false;
-  }
-}
 
 /* Steps of a Turn:
 1: Roll all dice
@@ -89,150 +62,134 @@ let timerState = { // Track our start/end (in milliseconds) to show the player t
 let allDice = []; // Array of our Dice objects
 let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
-let destination = "The Grand Canyon";
+let destination = chooseDestination();
 let scoreCounter = {};
 let resources; // Track our Fuel/Fun/Distance/Memories
 
 init();
 
 function init() {
+  // Set some mobile specific options
+  if (isMobileSize()) {
+    addCSSLink('mobile-css', './css/mobile.css');
+    settings.inlineHelp = false;
+    settings.backgroundImage = false;
+    settings.snow = false;
+  }
+  setupHotkeys();
   applySnow();
   applyInlineHelp();
-  resources = applyStartingResources(); // Initialize our default resources
+  resources = applyStartingResources();
   
   // Populate our initial dice array
   for (let diceIndex = 0; diceIndex < DICE_COUNT; diceIndex++) {
     allDice.push(new Dice(diceIndex, 1));
   }
   
-  // Add a listener for hotkeys
-  window.addEventListener('keyup', (event) => {
-    if (event && !hasEndOverlay()) {
-      if (event.key === 'r' || event.key === 'R') { rerollSelected(); }
-      else if (event.key === 'e' || event.key === 'E') { tryToEndTurn(); }
-      else if (event.key === 'd' || event.key === 'D') { randomizeDiceColors(); }
-      else if (event.key === 'h' || event.key === 'H') { toggleInlineHelp(); }
-      else if (event.key === '+' || event.key === '=') { modifySelected(1); }
-      else if (event.key === '-' || event.key === '_') { modifySelected(-1); }
-      else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
-      else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
-      else if (event.key === '3') { toggleDiceSelection(allDice[2]); }
-      else if (event.key === '4') { toggleDiceSelection(allDice[3]); }
-      else if (event.key === '5') { toggleDiceSelection(allDice[4]); }
-      else if (event.key === '6') { toggleDiceSelection(allDice[5]); }
-      else if (event.key === '!') { toggleDiceSelection(allDice[0], true); }
-      else if (event.key === '@') { toggleDiceSelection(allDice[1], true); }
-      else if (event.key === '#') { toggleDiceSelection(allDice[2], true); }
-      else if (event.key === '$') { toggleDiceSelection(allDice[3], true); }
-      else if (event.key === '%') { toggleDiceSelection(allDice[4], true); }
-      else if (event.key === '^') { toggleDiceSelection(allDice[5], true); }
-    }
-  });
-  
-  // Note for mobile users that there's no testing there so the app is probably jank. Primarily because the idea of dragging dice on squished mobile screen is unappealing
-  if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedMobileNote)) {
-    if (window.matchMedia("(max-width: 850px)").matches) {
-      alert("Road Trip! is best played in a desktop browser.\nThere has been almost no testing on mobile devices.");
-      setLocalStorageItem(LS_NAMES.hasDisplayedMobileNote, true);
-    }
-  }
-  
   document.addEventListener('alpine:initialized', () => {
-    // Once we have a reference to Alpine we want to make some variables reactive, so
-    //  changes are immediately shown on the UI
-    allDice = Alpine.reactive(allDice);
-    travelLog = Alpine.reactive(travelLog);
-    turnState = Alpine.reactive(turnState);
-    settings = Alpine.reactive(settings);
-    lostDialogState = Alpine.reactive(lostDialogState);
-    timerState = Alpine.reactive(timerState);
-    resources = Alpine.reactive(resources);
-    
-    // Effect listeners when the reactive state changes
-    Alpine.effect(() => {
-      // Maintain the usingRestStop flag
-      turnState.usingRestStop = allDice.filter(currentDice => currentDice.isSelected && currentDice.value === 4).length > 0;
-    });
-    Alpine.effect(() => {
-      // Maintain the allocatedDice count
-      turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
-    });
-    
-    $('.footer-car').draggable({
-      containment: '.dice-slots-wrap',
-      delay: 125,
-      axis: 'y'
-    });
-    $('.footer-car').click(function(clickEvent) {
-      clickFooterCar();
-    });
-    
-    allDice.forEach(currentDice => {
-      // Now that our array is rendered we can assign our elements to the allDice
-      currentDice.wrapperEle = $('#wrapper' + currentDice.diceIndex);
-      currentDice.hoverEle = $('#hover' + currentDice.diceIndex);
-      currentDice.diceEle = $('#dice' + currentDice.diceIndex);
-      currentDice.originalX = currentDice.wrapperEle.css('left');
-      currentDice.originalY = currentDice.wrapperEle.css('top');
-      
-      currentDice.wrapperEle.draggable({
-        containment: 'document',
-        delay: 125, // Make clicking less likely to drag an element accidentally
-        start: function(event, ui) {
-          // Update our z-index to be the highest, so our last dragged item always overlaps anything below it
-          $(this).css('z-index', lastZIndex++);
-          
-          // Also remove any validation border
-          markValidDice(currentDice);
-          currentDice.isAllocated = false;
-          
-          // Highlight all applicable droppable zones that have the correct number
-          $('.dice-dropzone').each(function(index, dropzoneEle) {
-            const dropzoneObj = $(dropzoneEle);
-            dropzoneObj.droppable({
-              activeClass: (currentDice.value === getDiceAllowed(dropzoneObj)) ?
-                'dice-dropzone-active' : '',
-              hoverClass: (currentDice.value === getDiceAllowed(dropzoneObj)) ?
-                'dice-dropzone-hover' : ''
-            });
-          });
-        },
-      });
-      // Add the click after draggable so that dragging doesn't fire click
-      currentDice.wrapperEle.click(function(clickEvent) {
-        // Pass the Shift key to select all matching dice if held while clicking
-        toggleDiceSelection(currentDice, clickEvent.shiftKey);
-      });
-    });
-    
-    $('.dice-dropzone').droppable({
-      drop: function (event, ui) {
-        const currentDice = allDice[ui.draggable.attr('data-index')];
-        if (currentDice.value === getDiceAllowed($(this))) {
-          markValidDice(currentDice);
-          currentDice.isAllocated = true;
-        }
-        else {
-          logEvent("Wrong value " + currentDice.value + " in slot " + labelObj[this.id]);
-          markInvalidDice(currentDice);
-        }
-      }
-    });
-    
-    // Show our instructions dialog if we haven't on load before
-    if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedIntro)) {
-      showInstructionDialog();
-      setLocalStorageItem(LS_NAMES.hasDisplayedIntro, true);
-    }
-    else {
-      // Start up the game
-      restartGame();
-    }
+    alpineInit();
   });
 }
 
-function isAlpineReady() {
-  return typeof Alpine === 'object';
+function alpineInit() {
+  // Once we have a reference to Alpine we want to make some variables reactive, so
+  //  changes are immediately shown on the UI
+  allDice = Alpine.reactive(allDice);
+  travelLog = Alpine.reactive(travelLog);
+  turnState = Alpine.reactive(turnState);
+  settings = Alpine.reactive(settings);
+  lostDialogState = Alpine.reactive(lostDialogState);
+  timerState = Alpine.reactive(timerState);
+  resources = Alpine.reactive(resources);
+  
+  // Effect listeners when the reactive state changes
+  Alpine.effect(() => {
+    // Maintain the usingRestStop flag
+    turnState.usingRestStop = allDice.filter(currentDice => currentDice.isSelected && currentDice.value === 4).length > 0;
+  });
+  Alpine.effect(() => {
+    // Maintain the allocatedDice count
+    turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
+  });
+  // TODO Could do an effect on `resources` to save to local storage, so that refreshing the page didn't lose the score. Maybe slightly encode so it's less immediately obvious to edit it to cheat?
+  
+  $('#footerCar').draggable({
+    containment: '.dice-slots-wrap',
+    delay: 125,
+    axis: 'y'
+  });
+  $('#footerCar').click(function(clickEvent) {
+    clickFooterCar();
+  });
+  
+  allDice.forEach(currentDice => {
+    // Now that our array is rendered we can assign our elements to the allDice
+    currentDice.wrapperEle = $('#wrapper' + currentDice.diceIndex);
+    currentDice.hoverEle = $('#hover' + currentDice.diceIndex);
+    currentDice.diceEle = $('#dice' + currentDice.diceIndex);
+    currentDice.originalX = currentDice.wrapperEle.css('left');
+    currentDice.originalY = currentDice.wrapperEle.css('top');
+    
+    currentDice.wrapperEle.draggable({
+      containment: 'document',
+      delay: 125, // Make clicking less likely to drag an element accidentally
+      start: function(event, ui) {
+        // Update our z-index to be the highest, so our last dragged item always overlaps anything below it
+        $(this).css('z-index', lastZIndex++);
+        
+        // Also remove any validation border
+        markValidDice(currentDice);
+        currentDice.isAllocated = false;
+        
+        // Highlight all applicable droppable zones that have the correct number
+        $('.dice-dropzone').each(function(index, dropzoneEle) {
+          const dropzoneObj = $(dropzoneEle);
+          dropzoneObj.droppable({
+            activeClass: (currentDice.value === getDiceAllowed(dropzoneObj)) ?
+              'dice-dropzone-active' : '',
+            hoverClass: (currentDice.value === getDiceAllowed(dropzoneObj)) ?
+              'dice-dropzone-hover' : ''
+          });
+        });
+      },
+    });
+    // Add the click after draggable so that dragging doesn't fire click
+    currentDice.wrapperEle.click(function(clickEvent) {
+      // Pass the Shift key to select all matching dice if held while clicking
+      toggleDiceSelection(currentDice, clickEvent.shiftKey);
+    });
+  });
+  
+  $('.dice-dropzone').droppable({
+    drop: function (event, ui) {
+      const currentDice = allDice[ui.draggable.attr('data-index')];
+      if (currentDice.value === getDiceAllowed($(this))) {
+        markValidDice(currentDice);
+        currentDice.isAllocated = true;
+      }
+      else {
+        logEvent("Wrong value " + currentDice.value + " in slot " + labelObj[this.id]);
+        markInvalidDice(currentDice);
+      }
+    }
+  });
+  
+  // Show our instructions dialog if we haven't on load before
+  if (!getLocalStorageBoolean(LS_NAMES.hasDisplayedIntro)) {
+    showInstructionDialog();
+    setLocalStorageItem(LS_NAMES.hasDisplayedIntro, true);
+  }
+  else {
+    // Start up the game
+    restartGame();
+  }
+  
+  /* TODO - Alternative theme as a racing game?
+   *  Lean into the timer aspect, let the player choose roadtrip vs race at the start before launching
+   *  Different wallpapers and different terminoloy (Fun = Tires, Memories = Skill, Rest Stop = Pit Stop, etc.)
+   *  Could do goofy stuff like "you got in a crash" once per game where the dice are scattered around the corners of the screen so they're harder to drag and drop quickly
+   *  Could have each Distance be a "lap", and you do a set number in a race, and it tracks your time for each lap and whether you finished. Since more likely to lose when rushing
+  */
 }
 
 function resetDicePositions() {
@@ -429,7 +386,7 @@ function restartGame() {
   
   // 60% of the time, it hue shifts every time
   if (Math.random() >= 0.4) {
-    document.getElementById('footerCar').style.filter = 'hue-rotate(' + randomDegrees() + ')';
+    $('#footerCar').css('filter', 'hue-rotate(' + randomDegrees() + ')');
   }
   
   // Start the new game after a slight delay to let the overlay close
@@ -474,6 +431,8 @@ function endTurn() {
     }
     
     if (gameOver) {
+      // TODO Store a history of our last 5 runs in local storage and put a UI element to view them? Could also track a personal best as well (as a separate item, between all runs ever)
+      // TODO Online scoreboard with a Bun/Node backing? TOTALLY wouldn't be hackable lol
       endTimer(); // Stop tracking our time
       logEvent("Duration: " + formatTimer(timerState.end - timerState.start, true));
       showEndOverlay();
@@ -495,11 +454,6 @@ function applyStartingResources() {
   toReturn.distance = 0;
   changeDistance(toReturn.distance, true);
   return toReturn;
-}
-
-function safeNum(val) {
-  // Return 0 if our number is undefined
-  return typeof val === 'number' ? val : 0;
 }
 
 function changeLostChoice(index, val) {
@@ -552,7 +506,7 @@ function closeInstructionDialog() {
 }
 
 function hasEndOverlay() {
-  return document.getElementById('endOverlay').style.display === 'block';
+  return $('#endOverlay').css('display') === 'block';
 }
 
 function showEndOverlay() {
@@ -764,34 +718,34 @@ function changeDistance(amount, setInstead) {
   
   function speedyFooterCarAnim() {
     // Temporarily reset our animation to super fast, then back to normal
-    footerCar.style.transition = 'left 500ms';
+    footerCar.css('transition', 'left 500ms');
     if (isAlpineReady()) {
       Alpine.nextTick(() => {
-        footerCar.style.transition = 'left 10s';
+        footerCar.css('transition', 'left 10s');
       });
     }
   }
   
   function moveFooterCar() {
     if (resources.distance > 0) {
-      const footerCar = document.getElementById('footerCar');
       const totalWidth = document.body.clientWidth;
       const segmentWidth = totalWidth/MAX_RESOURCES.distance;
-      footerCar.style.left = (resources.distance * segmentWidth) + 'px';
+      footerCar.css('left', (resources.distance * segmentWidth) + 'px');
       
       if (resources.distance >= MAX_RESOURCES.distance) {
         // Hard cap our distance at the very end of the screen, to stop scrollbars
-        footerCar.style.left = (totalWidth - 60) + 'px'; // TODO Don't have hardcoded width of the car here
+        footerCar.css('left', (totalWidth - footerCar.width()) + 'px');
         speedyFooterCarAnim();
       }
     }
     else {
       // Quick reset when resetting to the start
-      footerCar.style.left = '0px';
+      footerCar.css('left', '0px');
       speedyFooterCarAnim();
     }
   }
   
+  const footerCar = $('#footerCar');
   moveFooterCar();
 }
 
@@ -811,43 +765,19 @@ function markValidDice(diceObj) {
   diceObj.wrapperEle.css('box-shadow', '');
 }
 
-// TODO Cleanup all these toggle* to instead go through a generic function
-function toggleInlineHelp() {
-  settings.inlineHelp = !settings.inlineHelp;
-  setLocalStorageItem(LS_NAMES.showInlineHelp, settings.inlineHelp);
-  applyInlineHelp();
-}
-
-function toggleInstructions() {
-  settings.instructionPanel = !settings.instructionPanel;
-  setLocalStorageItem(LS_NAMES.showInstructionPanel, settings.instructionPanel);
-}
-
-function toggleOptions() {
-  settings.optionsPanel = !settings.optionsPanel;
-  setLocalStorageItem(LS_NAMES.showOptionsPanel, settings.optionsPanel);
-}
-
-function toggleTravelLog() {
-  settings.travelPanel = !settings.travelPanel;
-  setLocalStorageItem(LS_NAMES.showTravelLog, settings.travelPanel);
-}
-
-function toggleFastMode() {
-  settings.fastMode = !settings.fastMode;
-  setLocalStorageItem(LS_NAMES.useFastMode, settings.fastMode);
-}
-
-function toggleBackgroundImage() {
-  settings.backgroundImage = !settings.backgroundImage;
-  setLocalStorageItem(LS_NAMES.useBackgroundImage, settings.backgroundImage);
-  applyBackgroundImage();
-}
-
-function toggleSnow() {
-  settings.snow = !settings.snow;
-  setLocalStorageItem(LS_NAMES.showSnow, settings.snow);
-  applySnow();
+function toggleInstructions() { toggleStoredItem('instructionPanel', LS_NAMES.showInstructionPanel); }
+function toggleOptions() { toggleStoredItem('optionsPanel', LS_NAMES.showOptionsPanel); }
+function toggleTravelLog() { toggleStoredItem('travelPanel', LS_NAMES.showTravelLog); }
+function toggleFastMode() { toggleStoredItem('fastMode', LS_NAMES.useFastMode); }
+function toggleInlineHelp() { toggleStoredItem('inlineHelp', LS_NAMES.showInlineHelp, applyInlineHelp); }
+function toggleBackgroundImage() { toggleStoredItem('backgroundImage', LS_NAMES.useBackgroundImage, applyBackgroundImage); }
+function toggleSnow() { toggleStoredItem('snow', LS_NAMES.showSnow, applySnow); }
+function toggleStoredItem(settingsVarName, storageName, optionalCallback) {
+  settings[settingsVarName] = !settings[settingsVarName];
+  setLocalStorageItem(storageName, settings[settingsVarName]);
+  if (typeof optionalCallback === 'function') {
+    optionalCallback();
+  }
 }
 
 function applyInlineHelp() {
@@ -876,32 +806,29 @@ function applySnow() {
   }
 }
 
-function getLocalStorageItem(key) {
-  return window.localStorage.getItem(key);
-}
-
-function getLocalStorageBoolean(key, optionalDefault) {
-  const fromStorage = window.localStorage.getItem(key);
-  if (!fromStorage && typeof optionalDefault !== 'undefined') {
-    return optionalDefault;
-  }
-  return fromStorage && fromStorage === 'true' ? true : false;
-}
-
-function setLocalStorageItem(key, value) {
-  window.localStorage.setItem(key, value);
-}
-
-function removeLocalStorageItem(key) {
-  window.localStorage.removeItem(key);
-}
-
-function randomizeDiceColors() {
-  document.body.style.setProperty('--dice-face-color-1', randomColor());
-  document.body.style.setProperty('--dice-face-color-2', randomColor());
-  document.body.style.setProperty('--dice-face-color-3', randomColor());
-  document.body.style.setProperty('--dice-pip-color-1', randomColor());
-  document.body.style.setProperty('--dice-pipcolor-2', randomColor());
+function setupHotkeys() {
+  window.addEventListener('keyup', (event) => {
+    if (event && !hasEndOverlay()) {
+      if (event.key === 'r' || event.key === 'R') { rerollSelected(); }
+      else if (event.key === 'e' || event.key === 'E') { tryToEndTurn(); }
+      else if (event.key === 'd' || event.key === 'D') { randomizeDiceColors(); }
+      else if (event.key === 'h' || event.key === 'H') { toggleInlineHelp(); }
+      else if (event.key === '+' || event.key === '=') { modifySelected(1); }
+      else if (event.key === '-' || event.key === '_') { modifySelected(-1); }
+      else if (event.key === '1') { toggleDiceSelection(allDice[0]); }
+      else if (event.key === '2') { toggleDiceSelection(allDice[1]); }
+      else if (event.key === '3') { toggleDiceSelection(allDice[2]); }
+      else if (event.key === '4') { toggleDiceSelection(allDice[3]); }
+      else if (event.key === '5') { toggleDiceSelection(allDice[4]); }
+      else if (event.key === '6') { toggleDiceSelection(allDice[5]); }
+      else if (event.key === '!') { toggleDiceSelection(allDice[0], true); }
+      else if (event.key === '@') { toggleDiceSelection(allDice[1], true); }
+      else if (event.key === '#') { toggleDiceSelection(allDice[2], true); }
+      else if (event.key === '$') { toggleDiceSelection(allDice[3], true); }
+      else if (event.key === '%') { toggleDiceSelection(allDice[4], true); }
+      else if (event.key === '^') { toggleDiceSelection(allDice[5], true); }
+    }
+  });
 }
 
 function getDiceAllowed(dropzoneObj) {
@@ -924,91 +851,16 @@ function logEvent(event) {
   }
 }
 
-function formatTimer(toFormat, isEndTimer) {
-  function pad(val) {
-    return val >= 10 ? val : ('0' + val);
-  }
-  
-  const ms = toFormat % 1000;
-  toFormat = (toFormat - ms) / 1000;
-  const secs = toFormat % 60;
-  toFormat = (toFormat - secs) / 60;
-  const mins = toFormat % 60;
-  
-  // Output Minutes only if found, otherwise Seconds, and Milliseconds if asked with showMs
-  return `${mins > 0 ? (pad(mins) + 'm:') : ''}${pad(secs)}s${isEndTimer ? ('.' + Math.round(ms)) + 'ms' : ''}`;
-}
-
-function randomColor() {
-  const letters = '0123456789ABCDEF';
-  let color = '#';
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  
-  return color;
-}
-
-function randomDegrees() {
-  return randomRange(0, 360) + 'deg';
-}
-
-function randomRange(min, max) {
-  let randomNumber = 0;
-  if (window && window.crypto) {
-    const randomBuffer = new Uint32Array(1);
-    window.crypto.getRandomValues(randomBuffer);
-    randomNumber = randomBuffer[0] / (0xffffffff + 1);
-  }
-  else {
-    randomNumber = Math.random();
-  }
-  
-  return Math.floor(randomNumber * (max - min + 1)) + min;
-}
-
-function D6() {
-  return randomRange(1, 6);
-}
-
-function initSnow() {
-  const snowflakes = document.createElement('div');
-  snowflakes.id = 'snowflakes';
-  for (let i = 0; i < randomRange(10, 15); i++) {
-      const currentSnowflake = document.createElement('div');
-      currentSnowflake.className = 'snowflake';
-      
-      const type = Math.random();
-      if (type <= 0.33) {
-          currentSnowflake.innerHTML = '&#10052;';
-      }
-      else if (type <= 0.66) {
-          currentSnowflake.innerHTML = '&#10053;';
-      }
-      else {
-          currentSnowflake.innerHTML = '&#10054;';
-      }
-      snowflakes.appendChild(currentSnowflake);
-  }
-  document.body.appendChild(snowflakes);
-}
-
-function removeSnow() {
-  if (document.getElementById('snowflakes')) {
-      document.body.removeChild(document.getElementById('snowflakes'));
-  }
-}
-
 function clickFooterCar() {
-  const footerCar = document.getElementById('footerCar');
+  const footerCar = $('#footerCar');
   if (footerCar) {
     // Our first move is a bigger one, to let the user clicking does something
-    if (footerCar.style.left === '0px') {
-      footerCar.style.left = (parseInt(footerCar.style.left)+20) + 'px';
+    if (footerCar.css('left') === '0px') {
+      footerCar.css('left', (parseInt(footerCar.css('left'))+20) + 'px');
     }
     // After that it's painfully, PAINFULLY slow
     else if (Math.random() > 0.3) {
-      footerCar.style.left = (parseInt(footerCar.style.left)+1) + 'px';
+      footerCar.css('left', (parseInt(footerCar.css('left'))+1) + 'px');
     }
   }
 }
