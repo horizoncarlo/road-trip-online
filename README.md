@@ -1,13 +1,12 @@
 # Road Trip! - Online version
 *The open road calls...the luggage is packed, the car is (mostly) fuelled up, the kids have scribbled on the road maps, and the theme park, scenic canyon, party town, museum, or whatever destination awaits! The game challenges you to travel to your destination while managing the fun (and fuel) of the trip, and maybe making a memory or two along the way.*
 
+<a href="./images/example-game.jpg" target="_blank"><img style="width: 400px;" src="./images/example-game.jpg"/></a>
+
 Road Trip! is an online version adapted from a physical tabletop dice placement game.
 
-**Demo**: https://road-trip-online.onrender.com/
+### Play At: https://road-trip-online.onrender.com/
 
-**Print Rules**: https://horizongamesblog.wordpress.com/road-trip-2022/
-
-### How to Play
 You win if your Distance is 6 or higher.  
 You lose if your Fuel or Fun is 0 or lower.
 
@@ -22,10 +21,11 @@ Gain +1 Memory (up to a maximum of 6) for every pair of dice in a slot at the en
 
 When done, press End Turn to see how your resources changed, then start a new turn and keep driving.
 
-### Print Rules
-For more information on the game you can find the free rules at: https://horizongamesblog.wordpress.com/road-trip-2022/
+## Print Rules
+For more information on the game you can find the free rules at:  
+https://horizongamesblog.wordpress.com/road-trip-2022/
 
-### Setup
+## Setup
 The app uses:
 - Alpine.js for easier model binding
 - jQueryUI (of all things...) for simplifying drag-and-drop
