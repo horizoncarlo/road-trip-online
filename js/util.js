@@ -85,16 +85,6 @@ function addCSSLink(id, href) {
   document.head.appendChild(toAdd);
 }
 
-function addJSScript(id, src) {
-  if (document.getElementById(id)) {
-    return;
-  }
-  const toAdd = document.createElement('script');
-  toAdd.id = id;
-  toAdd.src = src;
-  document.head.appendChild(toAdd);
-}
-
 function initSnow() {
   // Import the CSS first as needed
   addCSSLink('snow-css', './css/snow.css');

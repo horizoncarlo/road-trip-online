@@ -14,6 +14,7 @@
     <!-- Go old fashioned and use jQueryUI for the drag and drop - fit better than Dragula and Droppable.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+    <script src="./js/jquery.ui.touch-punch.js"></script>
     
     <!-- Throw in a simple toast notification system instead of rolling our own. See the end of <body> for the JS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/notyf/3.10.0/notyf.min.css"/>
@@ -81,7 +82,8 @@
           <template x-data="{ loop: allDice }" x-for="diceObj in loop" :key="diceObj.id">
             <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
                  x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
-                 class="dice-wrapper">
+                 class="dice-wrapper"
+                 @click="toggleDiceSelection(diceObj, $event.shiftKey)">
               <div x-bind:id="'hover' + diceObj.diceIndex">
                 <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
                   <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
