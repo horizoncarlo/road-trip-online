@@ -73,6 +73,7 @@ init();
 function init() {
   // Set some mobile specific options
   if (isMobileSize()) {
+    addJSScript('jquery-touch-fix', './js/jquery.ui.touch-punch.js');
     addCSSLink('mobile-css', './css/mobile.css');
     settings.inlineHelp = false;
     settings.backgroundImage = false;
