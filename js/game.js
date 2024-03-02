@@ -156,6 +156,11 @@ function alpineInit() {
         });
       },
     });
+    // Add the click after draggable so that dragging doesn't fire click
+    currentDice.wrapperEle.click(function(clickEvent) {
+      // Pass the Shift key to select all matching dice if held while clicking
+      toggleDiceSelection(currentDice, clickEvent.shiftKey);
+    });
   });
   
   $('.dice-dropzone').droppable({

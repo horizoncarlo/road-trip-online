@@ -82,8 +82,7 @@
           <template x-data="{ loop: allDice }" x-for="diceObj in loop" :key="diceObj.id">
             <div x-bind:id="'wrapper' + diceObj.diceIndex" x-bind:data-index="diceObj.diceIndex"
                  x-bind:class="diceObj.isSelected ? 'dice-wrapper-selected': ''"
-                 class="dice-wrapper"
-                 @click="toggleDiceSelection(diceObj, $event.shiftKey)">
+                 class="dice-wrapper">
               <div x-bind:id="'hover' + diceObj.diceIndex">
                 <div x-bind:id="'dice' + diceObj.diceIndex" class="dice">
                   <div class="dice-face dice-face-1"><span class="dice-pip"></span></div>
