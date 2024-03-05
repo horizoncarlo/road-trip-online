@@ -23,8 +23,21 @@
     width: 100%;
   }
   
+  .toolbar-divider {
+    display: block;
+    border: 0;
+    margin: 0;
+    height: auto;
+    padding-bottom: 10px;
+  }
+  
   .resource-bar {
     width: 22%;
+  }
+  
+  .mod-button {
+    padding-left: 25px;
+    padding-right: 25px;
   }
   
   .dice-tray-wrap {

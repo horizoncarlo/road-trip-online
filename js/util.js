@@ -27,14 +27,6 @@ function removeLocalStorageItem(key) {
   window.localStorage.removeItem(key);
 }
 
-function randomizeDiceColors() {
-  document.body.style.setProperty('--dice-face-color-1', randomColor());
-  document.body.style.setProperty('--dice-face-color-2', randomColor());
-  document.body.style.setProperty('--dice-face-color-3', randomColor());
-  document.body.style.setProperty('--dice-pip-color-1', randomColor());
-  document.body.style.setProperty('--dice-pipcolor-2', randomColor());
-}
-
 function randomColor() {
   const letters = '0123456789ABCDEF';
   let color = '#';

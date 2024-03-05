@@ -3,11 +3,11 @@
   --dice-size-half: calc(var(--dice-size) / 2);
   --dice-pip-size: 20px;
   --dice-anim-ms: 100ms;
-  --dice-face-color-1: rgba(2,0,36,1);
-  --dice-face-color-2: rgba(9,9,121,1);
-  --dice-face-color-3: rgba(0,212,255,1);
-  --dice-pip-color-1: white;
-  --dice-pip-color-2: #333333;
+  --dice-face-color-A: rgba(2,0,36,1);
+  --dice-face-color-B: rgba(9,9,121,1);
+  --dice-face-color-C: rgba(0,212,255,1);
+  --dice-pip-color-A: white;
+  --dice-pip-color-B: #333333;
   --basic-gray: #333333;
   --primary-color: rgba(0, 100, 120, 1);
   --primary-color-soft: rgba(0, 100, 120, 0.3);
@@ -223,6 +223,24 @@ html, body, button, input {
   margin-right: auto;
 }
 
+.dice-button-wrap {
+  width: 100%;
+  text-align: center;
+}
+
+.dice-button-randomize,
+.dice-button-back {
+  display: inline-block;
+}
+
+.dice-button-randomize {
+  width: calc(95% - 50px);
+}
+
+.dice-button-back {
+  width: 50px;
+}
+
 .panel ul {
   margin-top: 0;
   margin-bottom: 0;
@@ -256,7 +274,7 @@ html, body, button, input {
 .dice-tray-wrap {
   width: 100%;
   text-align: center;
-  padding: 20px 0 20px 0;
+  padding: 15px 0 15px 0;
 }
 
 .dice-tray {
@@ -267,7 +285,7 @@ html, body, button, input {
 
 .dice-slots-wrap {
   width: 100%;
-  padding-bottom: 10px;
+  padding-bottom: 5px;
 }
 
 .dice-slots {
@@ -275,7 +293,7 @@ html, body, button, input {
   min-width: 35vw;
   margin-left: auto;
   margin-right: auto;
-  padding: 15px 15px 0 15px;
+  padding: 10px 10px 0 10px;
 }
 
 .welcome-image {
@@ -418,10 +436,10 @@ html, body, button, input {
   background-color: white;
   border: 3px inset #777777;
   border-radius: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 }
 .dropzone-pad {
-  margin-right: 20px;
+  margin-right: 10px;
 }
 
 .dice-dropzone label {
@@ -448,6 +466,7 @@ html, body, button, input {
   width: var(--dice-size);
   height: var(--dice-size);
   padding: 5px;
+  border-radius: 5px;
   cursor: pointer;
   display: inline-block;
 }
@@ -469,13 +488,13 @@ html, body, button, input {
   position: absolute;
   width: var(--dice-size);
   height: var(--dice-size);
-  background: linear-gradient(0deg, var(--dice-face-color-1) 0%, var(--dice-face-color-2) 40%, var(--dice-face-color-3) 100%);
+  background: linear-gradient(0deg, var(--dice-face-color-A) 0%, var(--dice-face-color-B) 40%, var(--dice-face-color-C) 100%);
   border: 1px solid var(--basic-gray);
 }
 
 .dice-pip {
   background-color: white;
-  background: radial-gradient(circle, var(--dice-pip-color-1) 0%, var(--dice-pip-color-2) 400%);
+  background: radial-gradient(circle, var(--dice-pip-color-A) 0%, var(--dice-pip-color-B) 400%);
   border: 1px solid black;
   display: block;
   width: var(--dice-pip-size);

@@ -48,6 +48,9 @@
       </div>
       
       <div x-data="{ turnState: turnState }" class="toolbar-item toolbar-middle">
+        <template x-if="isMobileSize()">
+          <span class="toolbar-divider"></span>
+        </template>
         <button onclick="modifySelected(1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to increase the selected die by 1">+1</button>
         <button onclick="rerollSelected()" :disabled="turnState.step === 1" title="Reroll the selected dice">
           <template x-if="turnState.usingRestStop">
@@ -61,13 +64,8 @@
           </template>
         </button>
         <button onclick="modifySelected(-1)" :disabled="turnState.step === 1" class="mod-button" title="Spend 2 Memories to decrease the selected die by 1">-1</button>
-        <template x-if="isMobileSize()">
-          <br/>
-        </template>
-        <template x-if="!isMobileSize()">
-          <span class="toolbar-divider"></span>
-        </template>
-        <button onclick="tryToEndTurn()" title="End your turn after you rerolled once and allocated all dice"><u>E</u>nd Turn</button>
+        <span class="toolbar-divider"></span>
+        <button onclick="tryToEndTurn()" title="End your turn after you rerolled once and allocated all dice">⌛ <u>E</u>nd Turn</button>
       </div>
       
       <div class="toolbar-item toolbar-end hide-on-mobile">
@@ -155,11 +153,16 @@
         </div>
       </div> <!-- end of dice slots-->
       
-      <div class="page-instructions panel" x-data="{ settings: settings }">
+      <div class="page-instructions panel" x-data="{ settings: settings, previousDiceColors: previousDiceColors }">
         <div class="panel-header" onclick="toggleOptions()">&gt; Options</div>
         <div x-show="settings.optionsPanel" class="panel-content">
           <div class="panel-buttons">
-            <button onclick="randomizeDiceColors()" title="Arguably the TRUE game - randomize your dice face and pip colors">🎲 Change <u>D</u>ice Colors</button>
+            <div class="dice-button-wrap">
+              <button class="dice-button-randomize" onclick="randomizeDiceColors()" title="Arguably the TRUE game - randomize your dice face and pip colors">🎲 Change <u>D</u>ice Colors</button>
+              <template x-if="previousDiceColors && previousDiceColors.length > 0">
+                <button class="dice-button-back" onclick="revertDiceColors()" :title="'Revert to your previous dice colors (' + previousDiceColors.length + ' stored)'">🔙</button>
+              </template>
+            </div>
             <div class="switch-wrap" onclick="toggleInlineHelp()" title="Show help and tips on dice use and resources info within the slot panel">
               <span class="switch">
                 <input type="checkbox" :checked="settings.inlineHelp"></input>
@@ -236,10 +239,10 @@
     
     <dialog id="confirmNewDialog">
       <p>Are you sure you want to start a new game?</p>
-      <i>This will discard your current drive and reset your resources<br/>(and most importantly redo your dice colors)</i>
+      <i>This will discard your current drive and reset your resources</i>
       <br/><br/>
-      <button onclick="closeConfirmNewDialog(); restartGame()">Yes, Restart</button>
-      <button onclick="closeConfirmNewDialog()">No</button>
+      <button onclick="closeConfirmNewDialog(); restartGame(true);">🚗 Yes, Restart</button>
+      <button onclick="closeConfirmNewDialog()">✗ No</button>
     </dialog>
     
     <dialog id="playDialog" x-data="{ maxResources: MAX_RESOURCES }">
@@ -253,7 +256,7 @@
       <p>Gain +1 Memory (up to a maximum of <span x-text="maxResources.memories"></span>) for every pair of dice in a slot at the end of the turn.</p>
       <p>When done, press End Turn to see how your resources changed, then start a new turn and keep driving.</p>
       <p><a href="https://horizongamesblog.files.wordpress.com/2022/12/road-trip_solo-dice-game-v1.pdf" target="_blank">Read the full rules here (PDF)</a> - or can print them out and play in real life!</p>
-      <button onclick="closeInstructionDialog()">🚗 Let's Play 🚗</button>
+      <button onclick="closeInstructionDialog()">🚗 Let's Play</button>
     </dialog>
     
     <dialog id="lostDialog" x-data="{ lostDialogState: lostDialogState, resources: resources }">
@@ -339,7 +342,7 @@
           <br/>
           <span x-text="formatTimer(timerState.end - timerState.start, true)"></span> Duration <span class="unicon">🕘</span>
         </div>
-        <button onclick="restartGame()" class="details">🚗 Start Another Trip 🚗</button>
+        <button onclick="restartGame(true)" class="details">🚗 Start Another Trip</button>
       </div>
     </div> <!-- end of end overlay -->
     

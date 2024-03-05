@@ -61,6 +61,7 @@ let timerState = { // Track our start/end (in milliseconds) to show the player t
   end: 0,
   current: 0
 };
+let previousDiceColors = []; // JSON object with values of: diceFaceA-C, dicePipA-B
 let allDice = []; // Array of our Dice objects
 let travelLog = []; // Array of strings noting our resource changes, turn starts, etc.
 let lastZIndex = 50; // Track the highest z-index, to ensure that whatever we drag always is on top
@@ -104,6 +105,7 @@ function alpineInit() {
   lostDialogState = Alpine.reactive(lostDialogState);
   timerState = Alpine.reactive(timerState);
   resources = Alpine.reactive(resources);
+  previousDiceColors = Alpine.reactive(previousDiceColors);
   
   // Effect listeners when the reactive state changes
   Alpine.effect(() => {
@@ -114,7 +116,6 @@ function alpineInit() {
     // Maintain the allocatedDice count
     turnState.allocatedDice = allDice.filter(currentDice => currentDice.isAllocated).length;
   });
-  // TODO Could do an effect on `resources` to save to local storage, so that refreshing the page didn't lose the score. Maybe slightly encode so it's less immediately obvious to edit it to cheat?
   
   $('#footerCar').draggable({
     containment: 'document',
@@ -140,8 +141,8 @@ function alpineInit() {
         // Update our z-index to be the highest, so our last dragged item always overlaps anything below it
         $(this).css('z-index', lastZIndex++);
         
-        // Also remove any validation border
-        markValidDice(currentDice);
+        // Remove any validation border when we first start dragging
+        markUnusedDice(currentDice);
         currentDice.isAllocated = false;
         
         // Highlight all applicable droppable zones that have the correct number
@@ -380,7 +381,7 @@ function endTimer() {
   timerState.current = 0;
 }
 
-function restartGame() {
+function restartGame(keepDiceColors) {
   let timeout = hasEndOverlay() ? 750 : 0;
   closeEndOverlay();
   
@@ -396,7 +397,9 @@ function restartGame() {
   setTimeout(() => {
     logEvent("🌄 New game started!");
     turnState.count = 0;
-    randomizeDiceColors();
+    if (!keepDiceColors) {
+      randomizeDiceColors();
+    }
     applyBackgroundImage();
     applyStartingResources();
     startTimer();
@@ -404,11 +407,27 @@ function restartGame() {
   }, timeout);
 }
 
+function beforeUnloader(event) {
+  if (!hasEndOverlay()) {
+    event.preventDefault();
+    event.returnValue = true;
+    return "You have a game in progress, are you sure you want to leave?";
+  }
+}
+
 function startTurn() {
   turnState.step = 1;
   turnState.count++;
   logEvent("Turn " + turnState.count);
   rollAllDice();
+  
+  // Confirm a user wants to leave/reload in case they have a game in progress
+  if (turnState.count > 1) {
+    window.addEventListener('beforeunload', beforeUnloader);
+  }
+  else {
+    window.removeEventListener('beforeunload', beforeUnloader);
+  }
 }
 
 function endTurn() {
@@ -652,10 +671,10 @@ function modifySelected(faceMod) {
 }
 
 function processDice(diceObj) {
-  // Mark that we're rolling, and don't allow the hover effect or validation border
+  // Set that we're rolling, and don't allow the hover effect or validation border
   diceObj.isRolling = true;
   diceObj.hoverEle.removeClass(HOVER_CLASS);
-  markValidDice(diceObj);
+  markUnusedDice(diceObj);
   
   let maxSpins = randomRange(TWIRL_MIN, TWIRL_RAND);
   if (settings.fastMode) {
@@ -694,7 +713,7 @@ function rollDice(diceObj) {
   // Re-enable the hover class
   diceObj.hoverEle.addClass(HOVER_CLASS);
   
-  // Mark we're done rolling once the animation completes
+  // Set we're done rolling once the animation completes
   setTimeout(() => {
     diceObj.isRolling = false;
   }, ROLL_ANIMATION_MS);
@@ -766,14 +785,19 @@ function getProgressWidth(resource, max) {
   return 'width: ' + percent + '%;';
 }
 
+function markUnusedDice(diceObj) {
+  // Clear any validation border
+  diceObj.wrapperEle.css('box-shadow', '');
+}
+
 function markInvalidDice(diceObj) {
   // An invalid dice means a red border
   diceObj.wrapperEle.css('box-shadow', '0 0 10px inset red'); 
 }
 
 function markValidDice(diceObj) {
-  // Clear any validation border if we're valid
-  diceObj.wrapperEle.css('box-shadow', '');
+  // An invalid dice means a green border, to help the user know they placed it fully into a slot
+  diceObj.wrapperEle.css('box-shadow', '0 0 5px inset green');
 }
 
 function toggleInstructions() { toggleStoredItem('instructionPanel', LS_NAMES.showInstructionPanel); }
@@ -875,6 +899,47 @@ function clickFooterCar() {
       footerCar.css('left', (parseInt(footerCar.css('left'))+1) + 'px');
     }
   }
+}
+
+function randomizeDiceColors() {
+  applyDiceColors(null);
+}
+
+function revertDiceColors() {
+  applyDiceColors(previousDiceColors.pop());
+}
+
+function applyDiceColors(colors) {
+  // If we don't have any params we'll want to randomize all our colors
+  if (!colors) {
+    colors = {
+      diceFaceA: randomColor(),
+      diceFaceB: randomColor(),
+      diceFaceC: randomColor(),
+      dicePipA: randomColor(),
+      dicePipB: randomColor()
+    }
+  
+    // Store our current (which will become previous) colors
+    const prevColors = {
+      diceFaceA: document.body.style.getPropertyValue('--dice-face-color-A'),
+      diceFaceB: document.body.style.getPropertyValue('--dice-face-color-B'),
+      diceFaceC: document.body.style.getPropertyValue('--dice-face-color-C'),
+      dicePipA: document.body.style.getPropertyValue('--dice-pip-color-A'),
+      dicePipB: document.body.style.getPropertyValue('--dice-pip-color-B'),
+    }
+    // Only store if found
+    if (prevColors.diceFaceA && prevColors.dicePipA) {
+      previousDiceColors.push(prevColors);
+    }
+  }
+  
+  // Apply the new colors
+  document.body.style.setProperty('--dice-face-color-A', colors.diceFaceA);
+  document.body.style.setProperty('--dice-face-color-B', colors.diceFaceB);
+  document.body.style.setProperty('--dice-face-color-C', colors.diceFaceC);
+  document.body.style.setProperty('--dice-pip-color-A', colors.dicePipA);
+  document.body.style.setProperty('--dice-pip-color-B', colors.dicePipB);
 }
 
 const BACKGROUND_IMAGES = [
