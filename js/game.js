@@ -50,7 +50,7 @@ let settings = { // Track which panels/elements are shown on the page
   snow: getLocalStorageBoolean(LS_NAMES.showSnow, false),
   road: getLocalStorageBoolean(LS_NAMES.showRoad, true),
   fastMode: getLocalStorageBoolean(LS_NAMES.useFastMode, false),
-  backgroundImage: getLocalStorageBoolean(LS_NAMES.useBackgroundImage, true),
+  backgroundImage: getLocalStorageBoolean(LS_NAMES.useBackgroundImage, !isMobileSize()),
 };
 let lostDialogState = {
   count: 0, // Count of dice in the Lost slot, pulled from scoreCounter.lost before showing the dialog
@@ -76,7 +76,6 @@ function init() {
   if (isMobileSize()) {
     addCSSLink('mobile-css', './css/mobile.css');
     settings.inlineHelp = false;
-    settings.backgroundImage = false;
     settings.snow = false;
     settings.road = false;
   }

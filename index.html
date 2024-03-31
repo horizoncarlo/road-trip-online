@@ -295,7 +295,7 @@
       </template>
       <template x-if="lostDialogState.count !== 1">
         <div>
-          <button onclick="submitLostDialog()">✓ Submit Choices</button>
+          <button onclick="submitLostDialog()">✓ Submit<span class="hide-on-mobile">&nbsp;Choices</span></button>
           <button onclick="submitLostDialog(true)">-<span x-text="lostDialogState.count * 2"></span> Fun 😎</button>
           <button onclick="submitLostDialog(false)">-<span x-text="lostDialogState.count * 2"></span> Fuel ⛽</button>
           <button onclick="closeLostDialog()" class="cancel-button" title="Cancel and decide later">🔙</button>
