@@ -177,7 +177,7 @@
               </span>
               Fast Roll
             </div>
-            <div class="switch-wrap hide-on-mobile" onclick="toggleBackgroundImage()" title="Use pictures of my road trips as the background">
+            <div class="switch-wrap" onclick="toggleBackgroundImage()" title="Use pictures of my road trips as the background">
               <span class="switch">
                 <input type="checkbox" :checked="settings.backgroundImage"></input>
                 <span class="slider round"></span>
@@ -290,6 +290,7 @@
         <div>
           <button onclick="submitLostDialog(true)">-2 Fun 😎</button>
           <button onclick="submitLostDialog(false)">-2 Fuel ⛽</button>
+          <button onclick="closeLostDialog()" class="cancel-button">🔙 Cancel</button>
         </div>
       </template>
       <template x-if="lostDialogState.count !== 1">
@@ -297,6 +298,7 @@
           <button onclick="submitLostDialog()">✓ Submit Choices</button>
           <button onclick="submitLostDialog(true)">-<span x-text="lostDialogState.count * 2"></span> Fun 😎</button>
           <button onclick="submitLostDialog(false)">-<span x-text="lostDialogState.count * 2"></span> Fuel ⛽</button>
+          <button onclick="closeLostDialog()" class="cancel-button" title="Cancel and decide later">🔙</button>
         </div>
       </template>
     </dialog> <!-- end of lost dialog -->

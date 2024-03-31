@@ -56,6 +56,10 @@ dialog button {
   min-width: 75px;
 }
 
+dialog .cancel-button {
+  color: #777777;
+}
+
 dialog,
 .toolbar,
 .panel,

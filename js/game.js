@@ -543,11 +543,17 @@ function showEndOverlay() {
   const overlay = $('#endOverlay');
   overlay.css('display', 'block');
   Alpine.nextTick(() => overlay.css('opacity', '1'));
+  
+  // Hide our dice so they don't overlap the overlay on some devices
+  $('.dice-tray').css('display', 'none');
 }
 
 function closeEndOverlay() {
   const overlay = $('#endOverlay');
   overlay.css('opacity', '0');
+  
+  $('.dice-tray').css('display', 'inline');
+  
   setTimeout(() => {
     overlay.css('display', 'none');
   }, 1000);
