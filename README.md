@@ -27,9 +27,9 @@ https://horizongamesblog.wordpress.com/road-trip-2022/
 
 ## Setup
 The app uses:
-- Alpine.js for easier model binding
-- jQueryUI (of all things...) for simplifying drag-and-drop
-- Notyf as a light toast solution
+- [Alpine.js](https://alpinejs.dev/) for easier model binding
+- [jQueryUI](https://jqueryui.com/) (of all things...) for simplifying drag-and-drop
+- [Notyf](https://www.npmjs.com/package/notyf) as a light toast solution
 - Otherwise plain vanilla HTML and JS
 
 As a result you can play the game locally by visiting `index.html` in a web browser - no further setup needed
